@@ -29,12 +29,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const whatsappPdfFilenameEl = document.getElementById("whatsappPdfFilename");
   const btnReopenWhatsapp = document.getElementById("btnReopenWhatsapp");
 
+  const editEntryModalEl = document.getElementById("editEntryModal");
+  const editEntryModal = editEntryModalEl && window.bootstrap ? new bootstrap.Modal(editEntryModalEl) : null;
+  const formEditWorkEntry = document.getElementById("formEditWorkEntry");
+
   let latestLoggedEntry = null;
   let currentPdfDoc = null;
   let currentPdfDocParsed = null;
   let pdfZoomLevelPct = 100;
   let pdfFitMode = "width";
   let currentPdfFilename = "MTS_Decor_Report.pdf";
+  let currentPdfTitle = "Daily Work Progress Report";
   let currentPdfLogs = [];
 
   // Screens
@@ -216,6 +221,38 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       } catch (err) {
         console.warn("Failed to write to MongoDB Atlas, cached locally:", err);
+      }
+    }
+  }
+
+  // Update an existing log in local cache and MongoDB Atlas
+  async function apiUpdateLog(updatedLog) {
+    if (!updatedLog || !updatedLog.id) return;
+    const logs = getStoredLogs();
+    const idx = logs.findIndex((l) => l.id === updatedLog.id);
+    if (idx >= 0) {
+      logs[idx] = { ...logs[idx], ...updatedLog, updatedAt: new Date().toISOString() };
+    } else {
+      logs.unshift(updatedLog);
+    }
+    saveLogs(logs);
+
+    if (isAtlasConnected) {
+      try {
+        const res = await fetch(`/api/logs/${encodeURIComponent(updatedLog.id)}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updatedLog)
+        });
+        if (!res.ok) {
+          await fetch("/api/logs", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(updatedLog)
+          });
+        }
+      } catch (err) {
+        console.warn("Failed to update in Atlas, cached locally:", err);
       }
     }
   }
@@ -1314,6 +1351,8 @@ document.addEventListener("DOMContentLoaded", () => {
       currentContext.masonName = taskMason;
       if (inputScreen3Mason) inputScreen3Mason.value = taskMason;
 
+      const statusVal = (document.querySelector('input[name="screen3TaskStatus"]:checked')?.value) || "Completed";
+
       const newLog = {
         id: "log_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7),
         projectName: currentContext.projectName,
@@ -1323,6 +1362,7 @@ document.addEventListener("DOMContentLoaded", () => {
         masonName: taskMason,
         workCategory: category,
         subTask: subTaskVal,
+        status: statusVal,
         notes: notesVal,
         createdAt: new Date().toISOString()
       };
@@ -1339,7 +1379,7 @@ document.addEventListener("DOMContentLoaded", () => {
       latestLoggedEntry = newLog;
 
       // Show toast
-      showToast("Work entry recorded successfully!", true);
+      showToast(`Work entry recorded as ${statusVal}!`, true);
 
       // Reset Step 2 fields (keeping Step 1 context and mason intact for quick batching)
       selectWorkCategory.value = "";
@@ -1355,6 +1395,9 @@ document.addEventListener("DOMContentLoaded", () => {
       if (btnToggleNotes) {
         btnToggleNotes.innerHTML = `<i class="bi bi-pencil-square me-1"></i>+ Add Notes`;
       }
+      const defaultStatusRadio = document.getElementById("statusCompleted");
+      if (defaultStatusRadio) defaultStatusRadio.checked = true;
+
       if (inputScreen3Mason) {
         inputScreen3Mason.value = taskMason;
       }
@@ -1576,10 +1619,20 @@ document.addEventListener("DOMContentLoaded", () => {
       // Draw the official MTS Decor letterhead frame
       drawMtsLetterheadFrame(doc);
 
+      // Calculate group status counts
+      const compCount = groupLogs.filter((l) => (l.status || "Completed") === "Completed").length;
+      const notCompCount = groupLogs.length - compCount;
+      const statusText = notCompCount === 0
+        ? `${compCount} Completed`
+        : compCount === 0
+        ? `${notCompCount} Not Completed`
+        : `${compCount} Completed, ${notCompCount} Not Completed`;
+
       // Metadata Info Card specifically for this Tower / Project
       let metaBody = [];
       if (groupLogs.length === 1 && logs.length === 1) {
         const log = groupLogs[0];
+        const singleStatus = log.status || "Completed";
         metaBody = [
           [
             { content: "Project / Tower :", styles: { fontStyle: "bold", textColor: [27, 163, 171], cellWidth: 28 } },
@@ -1592,6 +1645,19 @@ document.addEventListener("DOMContentLoaded", () => {
             { content: String(log.floorFlat || "-"), styles: { fontStyle: "bold", textColor: [20, 35, 45], cellWidth: 65 } },
             { content: "Mason :", styles: { fontStyle: "bold", textColor: [27, 163, 171], cellWidth: 20 } },
             { content: String(log.masonName || "-"), styles: { fontStyle: "normal", textColor: [20, 35, 45], cellWidth: 73 } }
+          ],
+          [
+            { content: "Task Status :", styles: { fontStyle: "bold", textColor: [27, 163, 171], cellWidth: 28 } },
+            {
+              content: singleStatus,
+              styles: {
+                fontStyle: "bold",
+                textColor: singleStatus === "Completed" ? [16, 130, 80] : [190, 80, 10],
+                cellWidth: 65
+              }
+            },
+            { content: "Generated :", styles: { fontStyle: "bold", textColor: [27, 163, 171], cellWidth: 20 } },
+            { content: `${dateFormatted} ${timeFormatted}`, styles: { fontStyle: "normal", textColor: [20, 35, 45], cellWidth: 73 } }
           ]
         ];
       } else {
@@ -1605,7 +1671,7 @@ document.addEventListener("DOMContentLoaded", () => {
           ],
           [
             { content: "Tower Summary :", styles: { fontStyle: "bold", textColor: [27, 163, 171], cellWidth: 28 } },
-            { content: `${groupLogs.length} Completed Task${groupLogs.length > 1 ? "s" : ""}`, styles: { fontStyle: "bold", textColor: [20, 35, 45], cellWidth: 65 } },
+            { content: `${groupLogs.length} Tasks (${statusText})`, styles: { fontStyle: "bold", textColor: [20, 35, 45], cellWidth: 65 } },
             { content: "Generated :", styles: { fontStyle: "bold", textColor: [27, 163, 171], cellWidth: 20 } },
             { content: `${dateFormatted} ${timeFormatted}`, styles: { fontStyle: "normal", textColor: [20, 35, 45], cellWidth: 73 } }
           ]
@@ -1635,13 +1701,14 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       // Work Details Table for this Tower
-      const tableHeaders = [["#", "Location / Flat", "Mason", "Work Category", "Specification", "Remarks / Notes"]];
+      const tableHeaders = [["#", "Location / Flat", "Mason", "Work Category", "Specification", "Status", "Remarks / Notes"]];
       const tableData = groupLogs.map((log, index) => [
         index + 1,
         log.floorFlat || log.projectName || "-",
         log.masonName || "-",
         log.workCategory || "-",
         log.subTask || "-",
+        log.status || "Completed",
         log.notes || "-"
       ]);
 
@@ -1668,12 +1735,22 @@ document.addEventListener("DOMContentLoaded", () => {
           overflow: "linebreak"
         },
         columnStyles: {
-          0: { cellWidth: 8, halign: "center" },
-          1: { cellWidth: 36 },
-          2: { cellWidth: 28 },
-          3: { cellWidth: 32 },
-          4: { cellWidth: 36 },
-          5: { cellWidth: 48 }
+          0: { cellWidth: 7, halign: "center" },
+          1: { cellWidth: 32 },
+          2: { cellWidth: 26 },
+          3: { cellWidth: 28 },
+          4: { cellWidth: 30 },
+          5: { cellWidth: 24, halign: "center", fontStyle: "bold" },
+          6: { cellWidth: 39 }
+        },
+        didParseCell: function(data) {
+          if (data.section === "body" && data.column.index === 5) {
+            if (data.cell.raw === "Completed") {
+              data.cell.styles.textColor = [16, 130, 80];
+            } else {
+              data.cell.styles.textColor = [190, 80, 10];
+            }
+          }
         },
         alternateRowStyles: {
           fillColor: [248, 252, 252]
@@ -1849,13 +1926,94 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // Review Status Before Print / Download Panel
+  function renderPdfReviewStatusPanel() {
+    const panel = document.getElementById("pdfReviewStatusPanel");
+    const listEl = document.getElementById("pdfReviewTaskList");
+    const badgeEl = document.getElementById("pdfReviewSummaryBadge");
+
+    if (!panel || !listEl) return;
+
+    if (!currentPdfLogs || currentPdfLogs.length === 0) {
+      panel.classList.add("d-none");
+      return;
+    }
+
+    panel.classList.remove("d-none");
+
+    const total = currentPdfLogs.length;
+    const completed = currentPdfLogs.filter((l) => (l.status || "Completed") === "Completed").length;
+    const pending = total - completed;
+
+    if (badgeEl) {
+      badgeEl.textContent = `${total} Tasks (${completed} Completed • ${pending} Not Completed)`;
+      badgeEl.className = pending === 0
+        ? "badge bg-success-subtle text-success small fw-semibold"
+        : "badge bg-warning-subtle text-warning-emphasis small fw-semibold";
+    }
+
+    listEl.innerHTML = currentPdfLogs.map((log) => {
+      const isComp = (log.status || "Completed") === "Completed";
+      const loc = log.floorFlat || log.projectName || "Location";
+      const mason = log.masonName || "Unassigned";
+
+      return `
+        <div class="pdf-review-task-item">
+          <div class="d-flex flex-column" style="min-width: 0;">
+            <div class="fw-bold text-dark text-truncate" style="font-size: 0.82rem;">
+              ${escapeHtml(loc)} <span class="fw-normal text-muted">(${escapeHtml(mason)})</span>
+            </div>
+            <div class="text-secondary small text-truncate" style="font-size: 0.75rem;">
+              <span class="badge bg-light text-secondary border me-1">${escapeHtml(log.workCategory || "")}</span>
+              ${escapeHtml(log.subTask || "")}
+            </div>
+          </div>
+          <button type="button" class="btn btn-sm ${isComp ? "btn-success" : "btn-warning text-dark"} fw-semibold btn-toggle-pdf-status text-nowrap px-2 py-1" data-id="${log.id}" title="Click to toggle status before print/download" style="font-size: 0.76rem;">
+            <i class="bi ${isComp ? "bi-check-circle-fill" : "bi-hourglass-split"} me-1"></i>
+            ${isComp ? "Completed" : "Not Completed"}
+          </button>
+        </div>
+      `;
+    }).join("");
+
+    listEl.querySelectorAll(".btn-toggle-pdf-status").forEach((btn) => {
+      btn.addEventListener("click", async (e) => {
+        e.preventDefault();
+        const id = btn.getAttribute("data-id");
+        const log = currentPdfLogs.find((l) => l.id === id);
+        if (log) {
+          const newStatus = (log.status || "Completed") === "Completed" ? "Not Completed" : "Completed";
+          log.status = newStatus;
+          await apiUpdateLog(log);
+          renderPdfReviewStatusPanel();
+          refreshCurrentPdfDoc();
+          renderFeed();
+          showToast(`Marked "${log.subTask || "Task"}" as ${newStatus}`, true);
+        }
+      });
+    });
+  }
+
+  function refreshCurrentPdfDoc() {
+    if (!currentPdfLogs || currentPdfLogs.length === 0) return;
+    currentPdfDoc = generatePdf(currentPdfLogs, currentPdfTitle || "Daily Work Progress Report");
+    if (currentPdfDoc) {
+      if (lastBlobUrl) URL.revokeObjectURL(lastBlobUrl);
+      const pdfBlob = currentPdfDoc.output("blob");
+      lastBlobUrl = URL.createObjectURL(pdfBlob);
+      renderPdfPagesToCanvas(currentPdfDoc);
+    }
+  }
+
   function openPdfPreview(logs, title, filename) {
     if (!logs || logs.length === 0) {
       showToast("No work entries to view", false);
       return;
     }
     currentPdfLogs = logs;
+    currentPdfTitle = title || "Daily Work Progress Report";
     currentPdfFilename = filename || "MTS_Decor_Report.pdf";
+    renderPdfReviewStatusPanel();
     currentPdfDoc = generatePdf(logs, title);
     if (!currentPdfDoc) return;
 
@@ -2056,7 +2214,9 @@ document.addEventListener("DOMContentLoaded", () => {
         showToast("No work entries to export", false);
         return;
       }
-      downloadPdf(logsToUse, "Daily Work Progress Report", `MTS_Daily_Report_${todayIso}.pdf`);
+      // Open PDF preview with pre-print review so user can review and set task status before download/print
+      openPdfPreview(logsToUse, "Daily Work Progress Report", `MTS_Daily_Report_${todayIso}.pdf`);
+      showToast("Review and verify task completion status before downloading or printing", true);
     });
   }
 
@@ -2096,10 +2256,31 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Filter State
+  let currentStatusFilter = "ALL";
+
+  // Status Filter Tabs
+  document.querySelectorAll(".btn-status-filter").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".btn-status-filter").forEach((b) => {
+        b.classList.remove("active");
+      });
+      btn.classList.add("active");
+      currentStatusFilter = btn.getAttribute("data-status-filter") || "ALL";
+      renderFeed();
+    });
+  });
+
   if (btnResetFilters) {
     btnResetFilters.addEventListener("click", () => {
       if (filterProject) filterProject.value = "ALL";
       if (filterDate) filterDate.value = "";
+      currentStatusFilter = "ALL";
+      document.querySelectorAll(".btn-status-filter").forEach((b) => {
+        b.classList.remove("active");
+      });
+      const btnAll = document.getElementById("btnFilterAll");
+      if (btnAll) btnAll.classList.add("active");
       renderFeed();
     });
   }
@@ -2126,6 +2307,128 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // Populate subtask suggestions datalist for edit modal based on category
+  function updateEditSubTaskSuggestions(category) {
+    const datalist = document.getElementById("editSubTaskSuggestions");
+    if (!datalist) return;
+    datalist.innerHTML = "";
+    if (!category || !WORK_LOGIC_MATRIX[category]) return;
+    WORK_LOGIC_MATRIX[category].forEach((item) => {
+      const opt = document.createElement("option");
+      opt.value = item;
+      datalist.appendChild(opt);
+    });
+  }
+
+  const editLogCategorySelect = document.getElementById("editLogCategory");
+  if (editLogCategorySelect) {
+    editLogCategorySelect.addEventListener("change", (e) => {
+      updateEditSubTaskSuggestions(e.target.value);
+    });
+  }
+
+  function openEditModal(log) {
+    if (!editEntryModal || !formEditWorkEntry) return;
+
+    const editLogId = document.getElementById("editLogId");
+    const editLogDate = document.getElementById("editLogDate");
+    const editLogProject = document.getElementById("editLogProject");
+    const editLogTower = document.getElementById("editLogTower");
+    const editLogFloorFlat = document.getElementById("editLogFloorFlat");
+    const editLogMason = document.getElementById("editLogMason");
+    const editLogCategory = document.getElementById("editLogCategory");
+    const editLogSubTask = document.getElementById("editLogSubTask");
+    const editLogNotes = document.getElementById("editLogNotes");
+    const editStatusCompleted = document.getElementById("editStatusCompleted");
+    const editStatusNotCompleted = document.getElementById("editStatusNotCompleted");
+
+    if (editLogId) editLogId.value = log.id;
+    if (editLogDate) editLogDate.value = log.date || "";
+    if (editLogProject) editLogProject.value = log.projectName || "";
+    if (editLogTower) editLogTower.value = log.tower || "";
+    if (editLogFloorFlat) editLogFloorFlat.value = log.floorFlat || "";
+    if (editLogMason) editLogMason.value = log.masonName || "";
+    if (editLogSubTask) editLogSubTask.value = log.subTask || "";
+    if (editLogNotes) editLogNotes.value = log.notes || "";
+
+    // Status radio selection
+    const isNotComp = (log.status || "Completed") === "Not Completed";
+    if (isNotComp) {
+      if (editStatusNotCompleted) editStatusNotCompleted.checked = true;
+    } else {
+      if (editStatusCompleted) editStatusCompleted.checked = true;
+    }
+
+    // Populate category dropdown
+    if (editLogCategory) {
+      const categories = Object.keys(WORK_LOGIC_MATRIX || {});
+      editLogCategory.innerHTML = categories.map((c) => {
+        const sel = c === log.workCategory ? "selected" : "";
+        return `<option value="${escapeHtml(c)}" ${sel}>${escapeHtml(c)}</option>`;
+      }).join("");
+
+      if (log.workCategory && !categories.includes(log.workCategory)) {
+        const opt = document.createElement("option");
+        opt.value = log.workCategory;
+        opt.textContent = log.workCategory;
+        opt.selected = true;
+        editLogCategory.appendChild(opt);
+      }
+
+      updateEditSubTaskSuggestions(log.workCategory);
+    }
+
+    editEntryModal.show();
+  }
+
+  // Handle Edit Entry Form Submission
+  if (formEditWorkEntry) {
+    formEditWorkEntry.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const idInput = document.getElementById("editLogId");
+      const id = idInput ? idInput.value : "";
+      if (!id) return;
+
+      const allStored = getStoredLogs();
+      const log = allStored.find((l) => l.id === id);
+      if (!log) {
+        showToast("Entry not found", false);
+        return;
+      }
+
+      const dateVal = document.getElementById("editLogDate") ? document.getElementById("editLogDate").value : log.date;
+      const projectVal = document.getElementById("editLogProject") ? document.getElementById("editLogProject").value.trim() : log.projectName;
+      const towerVal = document.getElementById("editLogTower") ? document.getElementById("editLogTower").value.trim() : "";
+      const floorFlatVal = document.getElementById("editLogFloorFlat") ? document.getElementById("editLogFloorFlat").value.trim() : log.floorFlat;
+      const masonVal = document.getElementById("editLogMason") ? document.getElementById("editLogMason").value.trim() : log.masonName;
+      const categoryVal = document.getElementById("editLogCategory") ? document.getElementById("editLogCategory").value : log.workCategory;
+      const subTaskVal = document.getElementById("editLogSubTask") ? document.getElementById("editLogSubTask").value.trim() : log.subTask;
+      const notesVal = document.getElementById("editLogNotes") ? document.getElementById("editLogNotes").value.trim() : "";
+
+      const editStatusNotCompleted = document.getElementById("editStatusNotCompleted");
+      const statusVal = (editStatusNotCompleted && editStatusNotCompleted.checked) ? "Not Completed" : "Completed";
+
+      const updatedLog = {
+        ...log,
+        date: dateVal,
+        projectName: projectVal,
+        tower: towerVal,
+        floorFlat: floorFlatVal,
+        masonName: masonVal,
+        workCategory: categoryVal,
+        subTask: subTaskVal,
+        status: statusVal,
+        notes: notesVal
+      };
+
+      await apiUpdateLog(updatedLog);
+      if (editEntryModal) editEntryModal.hide();
+      showToast("Work entry updated successfully!", true);
+      populateProjectFilter();
+      renderFeed();
+    });
+  }
+
   function renderFeed() {
     if (!workLogsFeed) return;
     const logs = getStoredLogs();
@@ -2133,24 +2436,44 @@ document.addEventListener("DOMContentLoaded", () => {
     const projFilter = filterProject ? filterProject.value : "ALL";
     const dateFilter = filterDate ? filterDate.value : "";
 
-    const filtered = logs.filter((log) => {
+    // Base filter by project and date
+    const baseFiltered = logs.filter((log) => {
       if (projFilter !== "ALL" && log.projectName !== projFilter) return false;
       if (dateFilter && log.date !== dateFilter) return false;
       return true;
     });
 
-    currentFilteredLogs = filtered;
+    // Counts for stats badges and filter tabs
+    const allCount = baseFiltered.length;
+    const completedCount = baseFiltered.filter((l) => (l.status || "Completed") === "Completed").length;
+    const pendingCount = allCount - completedCount;
+
+    const countAllEl = document.getElementById("countAllTasks");
+    const countCompEl = document.getElementById("countCompletedTasks");
+    const countPendingEl = document.getElementById("countPendingTasks");
+    if (countAllEl) countAllEl.textContent = allCount;
+    if (countCompEl) countCompEl.textContent = completedCount;
+    if (countPendingEl) countPendingEl.textContent = pendingCount;
 
     if (badgeTotalTasks) {
-      badgeTotalTasks.textContent = `Total Tasks Completed: ${filtered.length}`;
+      badgeTotalTasks.innerHTML = `Total Tasks: <strong>${allCount}</strong> (${completedCount} <span class="text-success fw-semibold">Completed</span> &bull; ${pendingCount} <span class="text-warning text-dark fw-semibold">Not Completed</span>)`;
     }
+
+    // Apply status filter tab
+    const filtered = baseFiltered.filter((log) => {
+      if (currentStatusFilter === "ALL") return true;
+      const st = log.status || "Completed";
+      return st === currentStatusFilter;
+    });
+
+    currentFilteredLogs = filtered;
 
     if (filtered.length === 0) {
       workLogsFeed.innerHTML = `
         <div class="text-center py-5">
           <div class="text-muted mb-2"><i class="bi bi-inbox fs-1"></i></div>
           <h6 class="text-secondary fw-semibold">No work entries found</h6>
-          <p class="text-muted small">No logs match the selected filter criteria, or no tasks have been recorded yet.</p>
+          <p class="text-muted small">No logs match the selected filter criteria (${currentStatusFilter !== "ALL" ? `Status: ${currentStatusFilter}` : "Project/Date"}), or no tasks have been recorded yet.</p>
           <button type="button" class="btn btn-outline-primary btn-sm mt-2" id="btnEmptyStateLog">
             <i class="bi bi-plus-lg me-1"></i> Log First Entry
           </button>
@@ -2165,18 +2488,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
     workLogsFeed.innerHTML = filtered.map((log) => {
       const formattedDate = formatDateDisplay(log.date);
+      const isComp = (log.status || "Completed") === "Completed";
       return `
-        <div class="task-card mb-3 shadow-sm" data-id="${log.id}">
-          <div class="d-flex justify-content-between align-items-start mb-2">
-            <div>
+        <div class="task-card mb-3 shadow-sm ${isComp ? "border-start-success" : "border-start-warning"}" data-id="${log.id}">
+          <div class="d-flex justify-content-between align-items-start mb-2 flex-wrap gap-1">
+            <div class="d-flex align-items-center flex-wrap gap-1">
               <span class="badge bg-light text-dark border me-1"><i class="bi bi-calendar-event me-1"></i>${formattedDate}</span>
               ${(log.masonName || "Unassigned").split(",").map((m) => `<span class="badge bg-secondary-subtle text-secondary me-1"><i class="bi bi-person me-1"></i>${escapeHtml(m.trim())}</span>`).join("")}
+              <!-- 1-Tap Status Toggle Pill -->
+              <button type="button" class="btn btn-sm ${isComp ? "btn-outline-success" : "btn-outline-warning text-dark"} btn-toggle-card-status py-0 px-2 rounded-pill fw-semibold" data-status-id="${log.id}" title="Click to toggle Completed / Not Completed" style="font-size: 0.73rem; line-height: 1.6;">
+                <i class="bi ${isComp ? "bi-check-circle-fill text-success" : "bi-hourglass-split text-warning"} me-1"></i>${isComp ? "Completed" : "Not Completed"}
+              </button>
             </div>
-            <div class="d-flex align-items-center gap-1">
-              <button type="button" class="btn btn-outline-success btn-sm rounded-circle p-0 d-flex align-items-center justify-content-center" data-wa-id="${log.id}" title="Share on WhatsApp" style="width: 32px; height: 32px; min-height: 32px;">
+            <div class="d-flex align-items-center gap-1 ms-auto">
+              <!-- Edit Button -->
+              <button type="button" class="btn btn-outline-primary btn-sm rounded-circle p-0 d-flex align-items-center justify-content-center btn-card-action btn-edit-entry" data-edit-id="${log.id}" title="Edit Work Entry">
+                <i class="bi bi-pencil-square"></i>
+              </button>
+              <button type="button" class="btn btn-outline-success btn-sm rounded-circle p-0 d-flex align-items-center justify-content-center btn-card-action" data-wa-id="${log.id}" title="Share on WhatsApp">
                 <i class="bi bi-whatsapp"></i>
               </button>
-              <button type="button" class="btn btn-outline-danger btn-sm rounded-circle p-0 d-flex align-items-center justify-content-center" data-pdf-id="${log.id}" title="View & Download PDF" style="width: 32px; height: 32px; min-height: 32px;">
+              <button type="button" class="btn btn-outline-danger btn-sm rounded-circle p-0 d-flex align-items-center justify-content-center btn-card-action" data-pdf-id="${log.id}" title="View & Download PDF">
                 <i class="bi bi-file-earmark-pdf"></i>
               </button>
               <button type="button" class="task-delete-btn" data-delete-id="${log.id}" title="Delete Entry">
@@ -2211,6 +2543,36 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
       `;
     }).join("");
+
+    // Quick toggle status directly on card
+    workLogsFeed.querySelectorAll(".btn-toggle-card-status").forEach((btn) => {
+      btn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const id = btn.getAttribute("data-status-id");
+        const allStored = getStoredLogs();
+        const log = allStored.find((l) => l.id === id);
+        if (log) {
+          const newStatus = (log.status || "Completed") === "Completed" ? "Not Completed" : "Completed";
+          log.status = newStatus;
+          await apiUpdateLog(log);
+          showToast(`Task marked as "${newStatus}"`, true);
+          renderFeed();
+        }
+      });
+    });
+
+    // Edit button click on card
+    workLogsFeed.querySelectorAll(".btn-edit-entry").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const id = btn.getAttribute("data-edit-id");
+        const allStored = getStoredLogs();
+        const log = allStored.find((l) => l.id === id);
+        if (log) {
+          openEditModal(log);
+        }
+      });
+    });
 
     // Attach listeners to card buttons
     workLogsFeed.querySelectorAll("[data-delete-id]").forEach((btn) => {
@@ -2289,6 +2651,7 @@ document.addEventListener("DOMContentLoaded", () => {
         "Mason Name",
         "Work Category",
         "Sub Task Specification",
+        "Status",
         "Remarks / Notes",
         "Timestamp"
       ];
@@ -2305,6 +2668,7 @@ document.addEventListener("DOMContentLoaded", () => {
           csvEscape(item.masonName),
           csvEscape(item.workCategory),
           csvEscape(item.subTask),
+          csvEscape(item.status || "Completed"),
           csvEscape(item.notes || ""),
           csvEscape(item.createdAt)
         ];

@@ -161,6 +161,47 @@ app.post('/api/logs', async (req, res) => {
   }
 });
 
+// 3b. Update an Existing Work Log
+app.put('/api/logs/:id', async (req, res) => {
+  if (!dbConnected || !workLogsCollection) {
+    return res.status(503).json({
+      success: false,
+      database: 'disconnected',
+      error: dbError || 'Database not connected'
+    });
+  }
+
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    if (!id || !updates) {
+      return res.status(400).json({ success: false, error: 'Missing log id or update data' });
+    }
+
+    const nowIso = new Date().toISOString();
+    const docToUpdate = {
+      ...updates,
+      id,
+      updatedAt: nowIso
+    };
+
+    const result = await workLogsCollection.updateOne(
+      { id },
+      { $set: docToUpdate },
+      { upsert: true }
+    );
+
+    res.json({
+      success: true,
+      log: docToUpdate,
+      modifiedCount: result.modifiedCount
+    });
+  } catch (err) {
+    console.error('Error updating log:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // 4. Batch Sync / Upload from Client localStorage
 app.post('/api/sync', async (req, res) => {
   if (!dbConnected || !workLogsCollection) {

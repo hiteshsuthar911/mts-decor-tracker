@@ -351,6 +351,24 @@
           </div>
         </div>
 
+        <!-- 5. Task Status Selection (Completed vs Not Completed) -->
+        <div class="mt-3">
+          <label class="form-label fw-semibold small text-secondary mb-1">
+            Task Status <span class="text-danger">*</span>
+          </label>
+          <div class="btn-group w-100" role="group" aria-label="Task Status">
+            <input type="radio" class="btn-check" name="screen3TaskStatus" id="statusCompleted" value="Completed" checked>
+            <label class="btn btn-outline-success fw-semibold btn-sm py-2 d-flex align-items-center justify-content-center gap-1" for="statusCompleted">
+              <i class="bi bi-check-circle-fill"></i> Completed
+            </label>
+
+            <input type="radio" class="btn-check" name="screen3TaskStatus" id="statusNotCompleted" value="Not Completed">
+            <label class="btn btn-outline-warning text-dark fw-semibold btn-sm py-2 d-flex align-items-center justify-content-center gap-1" for="statusNotCompleted">
+              <i class="bi bi-hourglass-split"></i> Not Completed
+            </label>
+          </div>
+        </div>
+
         <!-- Actions -->
         <div class="mt-4 pt-2 d-flex gap-2">
           <button type="button" class="btn btn-outline-secondary px-3" id="btnBackToScreen2">
@@ -395,14 +413,27 @@
               <input type="date" class="form-control form-control-sm" id="filterDate">
             </div>
           </div>
-          <!-- Filter stats & reset -->
-          <div class="d-flex justify-content-between align-items-center mt-2 px-1">
-            <span class="badge bg-primary text-white" id="badgeTotalTasks">
-              Total Tasks Completed: 0
-            </span>
-            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-muted small" id="btnResetFilters">
-              <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
-            </button>
+          <!-- Filter stats & status filter tabs -->
+          <div class="d-flex flex-wrap justify-content-between align-items-center mt-2 gap-2 px-1">
+            <div class="btn-group btn-group-sm" role="group" id="filterStatusGroup">
+              <button type="button" class="btn btn-primary fw-semibold btn-status-filter active" data-status-filter="ALL" id="btnFilterAll">
+                All (<span id="countAllTasks">0</span>)
+              </button>
+              <button type="button" class="btn btn-outline-success fw-semibold btn-status-filter" data-status-filter="Completed" id="btnFilterCompleted">
+                <i class="bi bi-check-circle-fill me-1"></i>Completed (<span id="countCompletedTasks">0</span>)
+              </button>
+              <button type="button" class="btn btn-outline-warning text-dark fw-semibold btn-status-filter" data-status-filter="Not Completed" id="btnFilterPending">
+                <i class="bi bi-hourglass-split me-1"></i>Not Completed (<span id="countPendingTasks">0</span>)
+              </button>
+            </div>
+            <div class="d-flex align-items-center gap-2 ms-auto">
+              <span class="badge bg-secondary-subtle text-secondary border small" id="badgeTotalTasks">
+                Total Tasks: 0
+              </span>
+              <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-muted small" id="btnResetFilters" title="Reset all filters">
+                <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -531,6 +562,19 @@
           </div>
 
           <div class="modal-body p-3 d-flex flex-column align-items-center overflow-auto" id="pdfModalBody" style="height: 75vh; min-height: 480px; background-color: #525659; -webkit-overflow-scrolling: touch;">
+            <!-- Pre-Print / Download Task Status Review Bar -->
+            <div class="w-100 bg-white rounded-3 p-2 mb-3 shadow-sm border" id="pdfReviewStatusPanel">
+              <div class="d-flex align-items-center justify-content-between mb-2 pb-1 border-bottom">
+                <span class="small fw-bold text-dark d-flex align-items-center gap-1">
+                  <i class="bi bi-list-check text-primary"></i> Review &amp; Verify Status Before Print / Download:
+                </span>
+                <span class="badge bg-primary-subtle text-primary small" id="pdfReviewSummaryBadge">0 Tasks</span>
+              </div>
+              <div id="pdfReviewTaskList" class="d-flex flex-column gap-1 overflow-auto" style="max-height: 140px;">
+                <!-- Populated dynamically with each task and its Completed / Not Completed toggle -->
+              </div>
+            </div>
+
             <!-- Loading indicator -->
             <div id="pdfLoadingSpinner" class="d-flex flex-column align-items-center justify-content-center text-white my-auto py-5">
               <div class="spinner-border text-light mb-2" role="status"></div>
@@ -655,6 +699,82 @@
       </div>
     </div>
 
+    <!-- Edit Work Entry Modal -->
+    <div class="modal fade" id="editEntryModal" tabindex="-1" aria-labelledby="editEntryModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered px-3">
+        <div class="modal-content shadow border-0">
+          <div class="modal-header py-2 px-3 bg-light border-bottom">
+            <h6 class="modal-title fw-bold text-dark mb-0" id="editEntryModalLabel">
+              <i class="bi bi-pencil-square text-primary me-2"></i>Edit Work Entry
+            </h6>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <form id="formEditWorkEntry">
+            <input type="hidden" id="editLogId">
+            <div class="modal-body p-3 d-flex flex-column gap-2">
+              <div>
+                <label for="editLogDate" class="form-label fw-semibold small text-secondary mb-1">Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control form-control-sm" id="editLogDate" required>
+              </div>
+              <div class="row g-2">
+                <div class="col-7">
+                  <label for="editLogProject" class="form-label fw-semibold small text-secondary mb-1">Project Name <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control form-control-sm" id="editLogProject" list="projectSuggestions" required>
+                </div>
+                <div class="col-5">
+                  <label for="editLogTower" class="form-label fw-semibold small text-secondary mb-1">Tower / Wing</label>
+                  <input type="text" class="form-control form-control-sm" id="editLogTower" list="towerSuggestions" placeholder="e.g. Tower A">
+                </div>
+              </div>
+              <div>
+                <label for="editLogFloorFlat" class="form-label fw-semibold small text-secondary mb-1">Floor &amp; Flat <span class="text-danger">*</span></label>
+                <input type="text" class="form-control form-control-sm" id="editLogFloorFlat" required placeholder="e.g. Floor 4 • Flat 401">
+              </div>
+              <div>
+                <label for="editLogMason" class="form-label fw-semibold small text-secondary mb-1">Mason / Labour(s) <span class="text-danger">*</span></label>
+                <input type="text" class="form-control form-control-sm" id="editLogMason" required placeholder="e.g. Sampat, Narayan ji">
+              </div>
+              <div class="row g-2">
+                <div class="col-6">
+                  <label for="editLogCategory" class="form-label fw-semibold small text-secondary mb-1">Work Category <span class="text-danger">*</span></label>
+                  <select class="form-select form-select-sm" id="editLogCategory" required></select>
+                </div>
+                <div class="col-6">
+                  <label for="editLogSubTask" class="form-label fw-semibold small text-secondary mb-1">Item / Specification <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control form-control-sm" id="editLogSubTask" list="editSubTaskSuggestions" required placeholder="e.g. Bed Room">
+                  <datalist id="editSubTaskSuggestions"></datalist>
+                </div>
+              </div>
+              <!-- Status Toggle -->
+              <div>
+                <label class="form-label fw-semibold small text-secondary mb-1">Task Status <span class="text-danger">*</span></label>
+                <div class="btn-group w-100" role="group">
+                  <input type="radio" class="btn-check" name="editTaskStatusRadio" id="editStatusCompleted" value="Completed">
+                  <label class="btn btn-outline-success btn-sm fw-semibold py-2 d-flex align-items-center justify-content-center gap-1" for="editStatusCompleted">
+                    <i class="bi bi-check-circle-fill"></i> Completed
+                  </label>
+                  <input type="radio" class="btn-check" name="editTaskStatusRadio" id="editStatusNotCompleted" value="Not Completed">
+                  <label class="btn btn-outline-warning text-dark btn-sm fw-semibold py-2 d-flex align-items-center justify-content-center gap-1" for="editStatusNotCompleted">
+                    <i class="bi bi-hourglass-split"></i> Not Completed
+                  </label>
+                </div>
+              </div>
+              <div>
+                <label for="editLogNotes" class="form-label fw-semibold small text-secondary mb-1">Remarks / Notes</label>
+                <textarea class="form-control form-control-sm" id="editLogNotes" rows="2" placeholder="Optional notes..."></textarea>
+              </div>
+            </div>
+            <div class="modal-footer py-2 px-3 bg-light border-top">
+              <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-primary btn-sm fw-semibold px-3" id="btnSaveEditLog">
+                <i class="bi bi-check-lg me-1"></i>Save Changes
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- Bootstrap 5.3 JS Bundle with Popper -->
@@ -665,9 +785,9 @@
   <!-- PDF.js for universal mobile & desktop canvas PDF rendering -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <!-- Constants, Logo & Data Logic -->
-  <script src="js/logo.js?v=19"></script>
-  <script src="js/constants.js?v=19"></script>
+  <script src="js/logo.js?v=20"></script>
+  <script src="js/constants.js?v=20"></script>
   <!-- Main Application Logic -->
-  <script src="js/app.js?v=19"></script>
+  <script src="js/app.js?v=20"></script>
 </body>
 </html>
