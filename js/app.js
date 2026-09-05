@@ -2490,7 +2490,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const formattedDate = formatDateDisplay(log.date);
       const isComp = (log.status || "Completed") === "Completed";
       return `
-        <div class="task-card mb-3 shadow-sm ${isComp ? "border-start-success" : "border-start-warning"}" data-id="${log.id}">
+        <div class="task-card shadow-sm ${isComp ? "border-start-success" : "border-start-warning"}" data-id="${log.id}">
           <div class="d-flex justify-content-between align-items-start mb-2 flex-wrap gap-1">
             <div class="d-flex align-items-center flex-wrap gap-1">
               <span class="badge bg-light text-dark border me-1"><i class="bi bi-calendar-event me-1"></i>${formattedDate}</span>

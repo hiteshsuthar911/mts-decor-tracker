@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>MTS Decor - Daily Work Progress Tracker</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏗️</text></svg>">
   <!-- Bootstrap 5.3 CSS (Light Theme) -->
@@ -10,12 +10,12 @@
   <!-- Bootstrap Icons -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <!-- Custom CSS -->
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=21">
 </head>
 <body class="bg-light">
 
   <!-- Main Viewport Container -->
-  <div class="app-viewport shadow-sm">
+  <div class="app-viewport">
 
     <!-- Toast Container for Notifications -->
     <div class="toast-container position-fixed top-0 start-50 translate-middle-x p-3">
@@ -33,8 +33,8 @@
     <!-- =================================================== -->
     <!-- SCREEN 1: 4-Digit PIN Security Lockscreen           -->
     <!-- =================================================== -->
-    <section id="screen1" class="app-screen active justify-content-center p-4">
-      <div class="text-center my-auto py-4">
+    <section id="screen1" class="app-screen active justify-content-center p-3 p-md-4">
+      <div class="pin-auth-card text-center my-auto py-4">
         <!-- Logo & Branding -->
         <div class="mb-3 text-center">
           <img src="logo/mtsdecor.png" alt="MTS Decor Logo" style="height: 72px; width: auto; object-fit: contain;">
@@ -83,20 +83,21 @@
     <!-- =================================================== -->
     <!-- SCREEN 2: Project & Worker Setup                    -->
     <!-- =================================================== -->
-    <section id="screen2" class="app-screen p-4">
-      <!-- Screen 2 Header -->
-      <div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom">
-        <div>
-          <span class="badge bg-primary-subtle text-primary fw-bold mb-1">Step 1 of 2</span>
-          <h4 class="fw-bold mb-0 text-dark">Location & Mason Details</h4>
+    <section id="screen2" class="app-screen p-3 p-md-4">
+      <div class="form-shell w-100">
+        <!-- Screen 2 Header -->
+        <div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom">
+          <div>
+            <span class="badge bg-primary-subtle text-primary fw-bold mb-1">Step 1 of 2</span>
+            <h4 class="fw-bold mb-0 text-dark">Location &amp; Mason Details</h4>
+          </div>
+          <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle" id="btnLockFromScreen2" title="Lock App" style="width: 40px; height: 40px; min-height: 40px;">
+            <i class="bi bi-lock-fill"></i>
+          </button>
         </div>
-        <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle" id="btnLockFromScreen2" title="Lock App" style="width: 40px; height: 40px; min-height: 40px;">
-          <i class="bi bi-lock-fill"></i>
-        </button>
-      </div>
 
-      <!-- Setup Form -->
-      <form id="formProjectSetup" class="d-flex flex-column gap-3">
+        <!-- Setup Form -->
+        <form id="formProjectSetup" class="d-flex flex-column gap-3">
         <!-- 1. Project & Tower / Wing -->
         <div class="row g-2">
           <div class="col-7">
@@ -247,139 +248,146 @@
           </button>
         </div>
       </form>
+      </div>
     </section>
 
     <!-- =================================================== -->
     <!-- SCREEN 3: Cascading Work Details Entry              -->
     <!-- =================================================== -->
-    <section id="screen3" class="app-screen p-4">
-      <!-- Screen 3 Header -->
-      <div class="mb-3">
-        <div class="d-flex align-items-center justify-content-between mb-2">
-          <span class="badge bg-success-subtle text-success fw-bold">Step 2 of 2</span>
-          <span class="small text-muted fw-semibold">Task Specification</span>
-        </div>
-        <!-- Context Pill -->
-        <div class="context-pill w-100 justify-content-between">
-          <div class="d-flex align-items-center gap-2 text-truncate">
-            <i class="bi bi-geo-alt-fill text-success"></i>
-            <span id="screen3ContextText" class="text-truncate">Project • Flat</span>
+    <section id="screen3" class="app-screen p-3 p-md-4">
+      <div class="form-shell w-100">
+        <!-- Screen 3 Header -->
+        <div class="mb-3">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <span class="badge bg-success-subtle text-success fw-bold">Step 2 of 2</span>
+            <span class="small text-muted fw-semibold">Task Specification</span>
           </div>
-          <button type="button" id="btnEditSetupContext" class="btn btn-sm btn-link text-success p-0 text-decoration-none fw-bold small" title="Edit Location & Mason">
-            Change
-          </button>
+          <!-- Context Pill -->
+          <div class="context-pill w-100 justify-content-between">
+            <div class="d-flex align-items-center gap-2 text-truncate">
+              <i class="bi bi-geo-alt-fill text-success"></i>
+              <span id="screen3ContextText" class="text-truncate">Project • Flat</span>
+            </div>
+            <button type="button" id="btnEditSetupContext" class="btn btn-sm btn-link text-success p-0 text-decoration-none fw-bold small" title="Edit Location & Mason">
+              Change
+            </button>
+          </div>
         </div>
+
+        <!-- Work Details Form -->
+        <form id="formWorkDetails" class="d-flex flex-column gap-3 mt-2">
+          <!-- 1. Parent Dropdown (Mandatory) -->
+          <div>
+            <label for="selectWorkCategory" class="form-label fw-semibold small text-secondary mb-1">
+              Work Detail (Category) <span class="text-danger">*</span>
+            </label>
+            <div class="input-group">
+              <span class="input-group-text bg-light text-secondary"><i class="bi bi-grid-fill"></i></span>
+              <select class="form-select" id="selectWorkCategory" required>
+                <option value="" selected disabled>Select Work Detail...</option>
+                <!-- Populated from constants -->
+              </select>
+            </div>
+          </div>
+
+          <!-- 2. Child Dropdown (Mandatory, Dynamic) -->
+          <div id="subTaskContainer" class="d-none">
+            <label for="selectSubTask" class="form-label fw-semibold small text-secondary mb-1">
+              Sub-Work Specification <span class="text-danger">*</span>
+            </label>
+            <div class="input-group">
+              <span class="input-group-text bg-light text-secondary"><i class="bi bi-diagram-3-fill"></i></span>
+              <select class="form-select" id="selectSubTask">
+                <option value="" selected disabled>Select Specific Item...</option>
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+          </div>
+
+          <!-- 3. Mason / Labour for this Work Entry (Repeater Rows) -->
+          <div class="card border border-light-subtle bg-light-subtle p-3 rounded-3 mb-2">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <label class="form-label fw-bold small text-dark mb-0 d-flex align-items-center gap-2">
+                <i class="bi bi-people-fill text-primary"></i> Mason / Labour Name <span class="text-danger">*</span>
+              </label>
+              <span class="badge bg-primary-subtle text-primary fw-semibold" id="screen3LabourCountBadge">1 Labour</span>
+            </div>
+
+            <!-- Dynamic Mason Rows Container for Screen 3 -->
+            <div id="screen3MasonRowsContainer" class="d-flex flex-column gap-2 mb-2">
+              <!-- Dynamically populated rows -->
+            </div>
+
+            <!-- Add Another Labour Button -->
+            <div class="mb-2">
+              <button type="button" class="btn btn-sm btn-outline-primary fw-semibold px-3 py-1 rounded-pill d-inline-flex align-items-center gap-1" id="btnAddScreen3MasonRow">
+                <i class="bi bi-plus-circle-fill"></i> + Add Labour
+              </button>
+            </div>
+
+            <!-- Hidden input for form submission & validation -->
+            <input type="hidden" id="inputScreen3Mason" name="inputScreen3Mason" required>
+
+            <!-- Quick Select Pills (Tap to Select or Add) -->
+            <div class="mt-2">
+              <div class="d-flex align-items-center justify-content-between mb-1">
+                <label class="form-label text-muted small mb-0 fw-semibold" style="font-size: 0.76rem;">Quick Suggestions:</label>
+                <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none small text-primary fw-semibold" id="btnQuickAddNewMasonScreen3" style="font-size: 0.74rem;">
+                  <i class="bi bi-plus-circle me-1"></i>Add New Mason
+                </button>
+              </div>
+              <div class="d-flex flex-wrap gap-1" id="screen3MasonPills">
+                <!-- Dynamically populated chips -->
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. Task Status Toggle (Completed vs Not Completed) -->
+          <div class="card border border-light-subtle bg-light-subtle p-3 rounded-3 mb-2">
+            <label class="form-label fw-bold small text-dark mb-2 d-flex align-items-center gap-2">
+              <i class="bi bi-flag-fill text-primary"></i> Task Status <span class="text-danger">*</span>
+            </label>
+            <div class="btn-group w-100" role="group" aria-label="Task Completion Status">
+              <input type="radio" class="btn-check" name="screen3TaskStatus" id="statusCompleted" value="Completed" checked autocomplete="off">
+              <label class="btn btn-outline-success fw-semibold py-2 d-flex align-items-center justify-content-center gap-2" for="statusCompleted">
+                <i class="bi bi-check-circle-fill"></i>
+                <span>Completed</span>
+              </label>
+
+              <input type="radio" class="btn-check" name="screen3TaskStatus" id="statusNotCompleted" value="Not Completed" autocomplete="off">
+              <label class="btn btn-outline-warning text-dark fw-semibold py-2 d-flex align-items-center justify-content-center gap-2" for="statusNotCompleted">
+                <i class="bi bi-hourglass-split"></i>
+                <span>Not Completed</span>
+              </label>
+            </div>
+            <div class="text-muted small mt-1" style="font-size: 0.75rem;">
+              <i class="bi bi-info-circle me-1"></i>Assign tasks as Completed or Not Completed before report generation.
+            </div>
+          </div>
+
+          <!-- 5. Remarks / Notes (Mandatory for 'Other', Optional for standard) -->
+          <div id="notesContainer">
+            <label for="inputWorkNotes" class="form-label fw-semibold small text-secondary mb-1">
+              Remarks / Notes <span id="notesRequiredBadge" class="text-danger d-none">*</span>
+            </label>
+            <div class="input-group">
+              <span class="input-group-text bg-light text-secondary"><i class="bi bi-chat-left-text"></i></span>
+              <textarea class="form-control" id="inputWorkNotes" rows="2" placeholder="e.g. Master bedroom wall tiles completed, grouting pending..."></textarea>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="mt-4 pt-2 d-flex gap-2">
+            <button type="button" class="btn btn-outline-secondary px-3" id="btnBackToScreen2">
+              <i class="bi bi-arrow-left"></i>
+            </button>
+            <button type="submit" class="btn btn-primary flex-grow-1 fw-semibold py-2 d-flex align-items-center justify-content-center gap-2">
+              <i class="bi bi-check2-circle fs-5"></i>
+              <span>Submit Work Entry</span>
+            </button>
+          </div>
+        </form>
       </div>
-
-      <!-- Work Details Form -->
-      <form id="formWorkDetails" class="d-flex flex-column gap-3 mt-2">
-        <!-- 1. Parent Dropdown (Mandatory) -->
-        <div>
-          <label for="selectWorkCategory" class="form-label fw-semibold small text-secondary mb-1">
-            Work Detail (Category) <span class="text-danger">*</span>
-          </label>
-          <div class="input-group">
-            <span class="input-group-text bg-light text-secondary"><i class="bi bi-grid-fill"></i></span>
-            <select class="form-select" id="selectWorkCategory" required>
-              <option value="" selected disabled>Select Work Detail...</option>
-              <!-- Populated from constants -->
-            </select>
-          </div>
-        </div>
-
-        <!-- 2. Child Dropdown (Mandatory, Dynamic) -->
-        <div id="subTaskContainer" class="d-none">
-          <label for="selectSubTask" class="form-label fw-semibold small text-secondary mb-1">
-            Sub-Work Specification <span class="text-danger">*</span>
-          </label>
-          <div class="input-group">
-            <span class="input-group-text bg-light text-secondary"><i class="bi bi-diagram-3-fill"></i></span>
-            <select class="form-select" id="selectSubTask">
-              <option value="" selected disabled>Select Specific Item...</option>
-              <!-- Populated dynamically -->
-            </select>
-          </div>
-        </div>
-
-        <!-- 3. Mason / Labour for this Work Entry (Repeater Rows) -->
-        <div class="card border border-light-subtle bg-light-subtle p-3 rounded-3 mb-2">
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <label class="form-label fw-bold small text-dark mb-0 d-flex align-items-center gap-2">
-              <i class="bi bi-people-fill text-primary"></i> Mason / Labour Name <span class="text-danger">*</span>
-            </label>
-            <span class="badge bg-primary-subtle text-primary fw-semibold" id="screen3LabourCountBadge">1 Labour</span>
-          </div>
-
-          <!-- Dynamic Mason Rows Container for Screen 3 -->
-          <div id="screen3MasonRowsContainer" class="d-flex flex-column gap-2 mb-2">
-            <!-- Dynamically populated rows -->
-          </div>
-
-          <!-- Add Another Labour Button -->
-          <div class="mb-2">
-            <button type="button" class="btn btn-sm btn-outline-primary fw-semibold px-3 py-1 rounded-pill d-inline-flex align-items-center gap-1" id="btnAddScreen3MasonRow">
-              <i class="bi bi-plus-circle-fill"></i> + Add Labour
-            </button>
-          </div>
-
-          <!-- Hidden input for form submission & validation -->
-          <input type="hidden" id="inputScreen3Mason" name="inputScreen3Mason" required>
-
-          <!-- Quick Select Pills (Tap to Select or Add) -->
-          <div class="mt-2">
-            <div class="d-flex align-items-center justify-content-between mb-1">
-              <span class="small text-muted" style="font-size: 0.76rem;">Quick Tap Suggestion:</span>
-            </div>
-            <div class="d-flex flex-wrap gap-1" id="quickMasonPillsScreen3">
-              <!-- Dynamically rendered pills -->
-            </div>
-          </div>
-        </div>
-
-        <!-- 4. Remarks / Custom Notes (Auto-unhides for "Other" or via toggle) -->
-        <div class="mt-1">
-          <div class="d-flex justify-content-between align-items-center mb-1">
-            <label for="textareaNotes" class="form-label fw-semibold small text-secondary mb-0">
-              Remarks / Custom Notes <span id="notesRequiredIndicator" class="text-danger d-none">*</span>
-            </label>
-            <button type="button" id="btnToggleNotes" class="btn btn-sm btn-link text-decoration-none p-0 small fw-semibold text-primary">
-              <i class="bi bi-pencil-square me-1"></i>+ Add Notes
-            </button>
-          </div>
-          <div id="notesContainer" class="d-none">
-            <textarea class="form-control" id="textareaNotes" rows="3" placeholder="Enter remarks, specific location details, or custom notes..."></textarea>
-          </div>
-        </div>
-
-        <!-- 5. Task Status Selection (Completed vs Not Completed) -->
-        <div class="mt-3">
-          <label class="form-label fw-semibold small text-secondary mb-1">
-            Task Status <span class="text-danger">*</span>
-          </label>
-          <div class="btn-group w-100" role="group" aria-label="Task Status">
-            <input type="radio" class="btn-check" name="screen3TaskStatus" id="statusCompleted" value="Completed" checked>
-            <label class="btn btn-outline-success fw-semibold btn-sm py-2 d-flex align-items-center justify-content-center gap-1" for="statusCompleted">
-              <i class="bi bi-check-circle-fill"></i> Completed
-            </label>
-
-            <input type="radio" class="btn-check" name="screen3TaskStatus" id="statusNotCompleted" value="Not Completed">
-            <label class="btn btn-outline-warning text-dark fw-semibold btn-sm py-2 d-flex align-items-center justify-content-center gap-1" for="statusNotCompleted">
-              <i class="bi bi-hourglass-split"></i> Not Completed
-            </label>
-          </div>
-        </div>
-
-        <!-- Actions -->
-        <div class="mt-4 pt-2 d-flex gap-2">
-          <button type="button" class="btn btn-outline-secondary px-3" id="btnBackToScreen2">
-            <i class="bi bi-arrow-left"></i>
-          </button>
-          <button type="submit" class="btn btn-primary flex-grow-1 fw-semibold py-2 d-flex align-items-center justify-content-center gap-2">
-            <i class="bi bi-check2-circle fs-5"></i>
-            <span>Submit Work Entry</span>
-          </button>
-        </div>
-      </form>
     </section>
 
     <!-- =================================================== -->
@@ -387,66 +395,68 @@
     <!-- =================================================== -->
     <section id="screen4" class="app-screen p-0">
       <!-- Sticky Dashboard Top Header -->
-      <div class="bg-white p-3 border-bottom sticky-top z-1">
-        <div class="d-flex align-items-center justify-content-between mb-3">
+      <div class="dashboard-top-header bg-white p-3 p-md-4 border-bottom sticky-top z-1">
+        <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
           <div>
             <h5 class="fw-bold mb-1 text-dark">Daily Work Log Book</h5>
             <div class="text-muted small">Supervisor Control &amp; Records</div>
           </div>
-          <button type="button" class="btn btn-primary btn-sm fw-semibold d-flex align-items-center gap-1 shadow-sm px-3 py-2" id="btnLogNewEntryFromDashboard">
-            <i class="bi bi-plus-lg"></i>
-            <span>Log New Entry</span>
-          </button>
+          <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-primary fw-semibold d-flex align-items-center gap-1 shadow-sm px-3 py-2" id="btnLogNewEntryFromDashboard">
+              <i class="bi bi-plus-lg"></i>
+              <span>Log New Entry</span>
+            </button>
+          </div>
         </div>
 
         <!-- Search & Filters Container -->
-        <div class="bg-light p-2 rounded-3 border">
-          <div class="row g-2">
+        <div class="dashboard-filter-card bg-light p-2 p-md-3 rounded-3 border">
+          <div class="row g-2 align-items-center">
             <!-- Project Filter -->
-            <div class="col-7">
+            <div class="col-12 col-sm-6 col-lg-3">
               <select class="form-select form-select-sm" id="filterProject">
                 <option value="ALL">All Projects</option>
               </select>
             </div>
             <!-- Date Filter -->
-            <div class="col-5">
+            <div class="col-12 col-sm-6 col-lg-3">
               <input type="date" class="form-control form-control-sm" id="filterDate">
             </div>
-          </div>
-          <!-- Filter stats & status filter tabs -->
-          <div class="d-flex flex-wrap justify-content-between align-items-center mt-2 gap-2 px-1">
-            <div class="btn-group btn-group-sm" role="group" id="filterStatusGroup">
-              <button type="button" class="btn btn-primary fw-semibold btn-status-filter active" data-status-filter="ALL" id="btnFilterAll">
-                All (<span id="countAllTasks">0</span>)
-              </button>
-              <button type="button" class="btn btn-outline-success fw-semibold btn-status-filter" data-status-filter="Completed" id="btnFilterCompleted">
-                <i class="bi bi-check-circle-fill me-1"></i>Completed (<span id="countCompletedTasks">0</span>)
-              </button>
-              <button type="button" class="btn btn-outline-warning text-dark fw-semibold btn-status-filter" data-status-filter="Not Completed" id="btnFilterPending">
-                <i class="bi bi-hourglass-split me-1"></i>Not Completed (<span id="countPendingTasks">0</span>)
-              </button>
-            </div>
-            <div class="d-flex align-items-center gap-2 ms-auto">
-              <span class="badge bg-secondary-subtle text-secondary border small" id="badgeTotalTasks">
-                Total Tasks: 0
-              </span>
-              <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-muted small" id="btnResetFilters" title="Reset all filters">
-                <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
-              </button>
+            <!-- Filter status tabs & stats -->
+            <div class="col-12 col-lg-6 d-flex flex-wrap align-items-center justify-content-between justify-content-lg-end gap-2">
+              <div class="btn-group btn-group-sm filter-status-group" role="group" id="filterStatusGroup">
+                <button type="button" class="btn btn-primary fw-semibold btn-status-filter active" data-status-filter="ALL" id="btnFilterAll">
+                  All (<span id="countAllTasks">0</span>)
+                </button>
+                <button type="button" class="btn btn-outline-success fw-semibold btn-status-filter" data-status-filter="Completed" id="btnFilterCompleted">
+                  <i class="bi bi-check-circle-fill me-1"></i>Completed (<span id="countCompletedTasks">0</span>)
+                </button>
+                <button type="button" class="btn btn-outline-warning text-dark fw-semibold btn-status-filter" data-status-filter="Not Completed" id="btnFilterPending">
+                  <i class="bi bi-hourglass-split me-1"></i>Not Completed (<span id="countPendingTasks">0</span>)
+                </button>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-secondary-subtle text-secondary border small py-2 px-2" id="badgeTotalTasks">
+                  Total Tasks: 0
+                </span>
+                <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-muted small" id="btnResetFilters" title="Reset all filters">
+                  <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       <!-- Feed Display (Cards) -->
-      <div class="p-3 flex-grow-1 overflow-y-auto" id="workLogsFeed">
+      <div class="p-3 p-md-4 flex-grow-1 overflow-y-auto" id="workLogsFeed">
         <!-- Dynamic Cards Injected Here -->
       </div>
 
       <!-- Bottom Utility Bar -->
-      <div class="bottom-utility-bar d-flex flex-column gap-2">
-        <div class="d-flex gap-2">
-          <button type="button" class="btn btn-danger flex-grow-1 fw-semibold d-flex align-items-center justify-content-center gap-1 shadow-sm" id="btnDownloadDailyPdf">
+      <div class="bottom-utility-bar d-flex flex-column flex-md-row justify-content-between align-items-stretch align-items-md-center gap-2 p-3 p-md-4">
+        <div class="d-flex gap-2 flex-grow-1 flex-md-grow-0">
+          <button type="button" class="btn btn-danger flex-grow-1 flex-md-grow-0 px-md-4 fw-semibold d-flex align-items-center justify-content-center gap-1 shadow-sm" id="btnDownloadDailyPdf">
             <i class="bi bi-file-earmark-pdf-fill"></i>
             <span>Download PDF Report</span>
           </button>
@@ -456,18 +466,21 @@
           </button>
           <button type="button" class="btn btn-success btn-sm px-3 d-flex align-items-center justify-content-center gap-1" id="btnShareDailyWhatsapp" title="Share Daily Report on WhatsApp">
             <i class="bi bi-whatsapp fs-6"></i>
+            <span class="d-none d-lg-inline small">WhatsApp</span>
           </button>
         </div>
-        <div class="d-flex gap-2">
-          <button type="button" class="btn btn-outline-primary flex-grow-1 fw-semibold d-flex align-items-center justify-content-center gap-1" id="btnExportCsv">
+        <div class="d-flex gap-2 justify-content-end">
+          <button type="button" class="btn btn-outline-primary flex-grow-1 flex-md-grow-0 px-md-3 fw-semibold d-flex align-items-center justify-content-center gap-1" id="btnExportCsv">
             <i class="bi bi-file-earmark-spreadsheet-fill text-success fs-5"></i>
             <span>Export to CSV</span>
           </button>
           <button type="button" class="btn btn-outline-danger btn-sm px-3" id="btnClearAllData" title="Clear All Data">
             <i class="bi bi-trash3"></i>
+            <span class="d-none d-lg-inline small ms-1">Clear</span>
           </button>
           <button type="button" class="btn btn-outline-secondary btn-sm px-3" id="btnLockApp" title="Lock App">
             <i class="bi bi-lock-fill"></i>
+            <span class="d-none d-lg-inline small ms-1">Lock</span>
           </button>
         </div>
       </div>
@@ -785,9 +798,9 @@
   <!-- PDF.js for universal mobile & desktop canvas PDF rendering -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <!-- Constants, Logo & Data Logic -->
-  <script src="js/logo.js?v=20"></script>
-  <script src="js/constants.js?v=20"></script>
+  <script src="js/logo.js?v=21"></script>
+  <script src="js/constants.js?v=21"></script>
   <!-- Main Application Logic -->
-  <script src="js/app.js?v=20"></script>
+  <script src="js/app.js?v=21"></script>
 </body>
 </html>
