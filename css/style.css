@@ -284,3 +284,57 @@ body {
 .toast-container {
   z-index: 1080;
 }
+
+/* Mason Quick Suggestion Pills */
+.mason-pill-btn {
+  font-size: 0.76rem;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 50rem;
+  border: 1px solid #cbd5e1;
+  background-color: #ffffff;
+  color: #334155;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.mason-pill-btn:hover {
+  background-color: #f1f5f9;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+.mason-pill-btn.active {
+  background-color: #1ba3ab;
+  border-color: #1ba3ab;
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(27, 163, 171, 0.35);
+}
+
+.mason-add-pill-btn {
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 50rem;
+  border: 1px dashed #1ba3ab;
+  background-color: #f0fdfa;
+  color: #0d747a;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.mason-add-pill-btn:hover {
+  background-color: #1ba3ab;
+  color: #ffffff;
+  border-style: solid;
+}
+

@@ -29,6 +29,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const whatsappPdfFilenameEl = document.getElementById("whatsappPdfFilename");
   const btnReopenWhatsapp = document.getElementById("btnReopenWhatsapp");
 
+  const addMasonModalEl = document.getElementById("addMasonModal");
+  const addMasonModal = addMasonModalEl && window.bootstrap ? new bootstrap.Modal(addMasonModalEl) : null;
+  const formAddNewMason = document.getElementById("formAddNewMason");
+  const inputNewMasonName = document.getElementById("inputNewMasonName");
+
   let latestLoggedEntry = null;
   let currentPdfDoc = null;
   let currentPdfDocParsed = null;
@@ -392,6 +397,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const flatValidationMessage = document.getElementById("flatValidationMessage");
   const inputDate = document.getElementById("inputDate");
   const inputMasonName = document.getElementById("inputMasonName");
+  const inputScreen3Mason = document.getElementById("inputScreen3Mason");
   const inputTower = document.getElementById("inputTower");
   const projectSuggestionsDatalist = document.getElementById("projectSuggestions");
   const towerSuggestionsDatalist = document.getElementById("towerSuggestions");
@@ -421,23 +427,93 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Get all unique known masons from defaults + logs
+  // --- Persistent Custom Masons & Suggestions ---
+  const CUSTOM_MASONS_KEY = "mts_custom_masons";
+
+  function getCustomMasons() {
+    try {
+      const raw = localStorage.getItem(CUSTOM_MASONS_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      console.error("Failed to parse custom masons", e);
+      return [];
+    }
+  }
+
+  function saveCustomMason(name) {
+    if (!name || !name.trim()) return null;
+    const trimmed = name.trim();
+    const current = getCustomMasons();
+    if (!current.some((m) => m.toLowerCase() === trimmed.toLowerCase())) {
+      current.push(trimmed);
+      try {
+        localStorage.setItem(CUSTOM_MASONS_KEY, JSON.stringify(current));
+      } catch (e) {
+        console.error("Failed to save custom mason", e);
+      }
+    }
+    return trimmed;
+  }
+
+  // Get all unique known masons from defaults + custom masons + logs
   function getAllKnownMasons() {
-    const list = Array.isArray(DEFAULT_MASONS) ? [...DEFAULT_MASONS] : [];
+    const list = [];
+    const pushIfNew = (name) => {
+      if (!name) return;
+      const t = String(name).trim();
+      if (!t || t === "-" || t.toLowerCase() === "unassigned") return;
+      if (!list.some((existing) => existing.toLowerCase() === t.toLowerCase())) {
+        list.push(t);
+      }
+    };
+
+    // 1. Defaults from constants.js
+    if (Array.isArray(DEFAULT_MASONS)) {
+      DEFAULT_MASONS.forEach(pushIfNew);
+    }
+
+    // 2. Custom Masons added by user
+    getCustomMasons().forEach(pushIfNew);
+
+    // 3. Stored entries/logs
     const storedLogs = getStoredLogs();
     storedLogs.forEach((l) => {
-      if (l.masonName && l.masonName.trim() && l.masonName !== "-" && !list.includes(l.masonName.trim())) {
-        list.push(l.masonName.trim());
-      }
+      if (l.masonName) pushIfNew(l.masonName);
     });
+
     return list;
   }
 
-  // Populate mason datalist and quick-selection pills on Screen 2 and Screen 3
-  function populateMasonDatalistsAndPills() {
-    const masons = getAllKnownMasons();
+  // Helper to visually update active/selected pill highlight
+  function updateActiveMasonPills(activeName) {
+    const target = (activeName || "").trim().toLowerCase();
+    const allPillBtns = document.querySelectorAll(".mason-pill-s2, .mason-pill-s3");
+    allPillBtns.forEach((btn) => {
+      const m = (btn.getAttribute("data-mason") || "").trim().toLowerCase();
+      const icon = btn.querySelector("i");
+      if (target && m === target) {
+        btn.classList.add("active");
+        if (icon) {
+          icon.className = "bi bi-check2 me-1";
+        }
+      } else {
+        btn.classList.remove("active");
+        if (icon) {
+          icon.className = "bi bi-person me-1";
+        }
+      }
+    });
+  }
 
-    // 1. Datalist
+  // Populate mason datalist and quick-selection pills on Screen 2 and Screen 3
+  function populateMasonDatalistsAndPills(selectedMason) {
+    const masons = getAllKnownMasons();
+    const currentMason = (selectedMason !== undefined
+      ? selectedMason
+      : ((inputMasonName && inputMasonName.value) || (inputScreen3Mason && inputScreen3Mason.value) || currentContext.masonName || "")
+    ).trim();
+
+    // 1. Autocomplete Datalist
     const datalist = document.getElementById("masonSuggestionsList");
     if (datalist) {
       datalist.innerHTML = masons.map(
@@ -445,45 +521,135 @@ document.addEventListener("DOMContentLoaded", () => {
       ).join("");
     }
 
+    // Builder for pill HTML with dedicated + Add New button
+    const renderPillsHTML = (pillClass) => {
+      let html = `
+        <button type="button" class="mason-add-pill-btn btn-trigger-add-mason" title="Add a new mason / labour">
+          <i class="bi bi-person-plus-fill"></i>+ Add New
+        </button>
+      `;
+      html += masons.map((m) => {
+        const isSelected = Boolean(currentMason && m.toLowerCase() === currentMason.toLowerCase());
+        const activeClass = isSelected ? " active" : "";
+        const icon = isSelected ? "bi-check2" : "bi-person";
+        return `
+          <button type="button" class="mason-pill-btn ${pillClass}${activeClass}" data-mason="${escapeHtml(m)}">
+            <i class="bi ${icon} me-1"></i>${escapeHtml(m)}
+          </button>
+        `;
+      }).join("");
+      return html;
+    };
+
     // 2. Quick Pills Screen 2
     const pillsS2 = document.getElementById("quickMasonPillsScreen2");
     if (pillsS2) {
-      pillsS2.innerHTML = masons.slice(0, 10).map((m) => `
-        <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 rounded-pill mason-pill-s2" data-mason="${escapeHtml(m)}" style="font-size: 0.74rem;">
-          <i class="bi bi-person me-1"></i>${escapeHtml(m)}
-        </button>
-      `).join("");
-
+      pillsS2.innerHTML = renderPillsHTML("mason-pill-s2");
       pillsS2.querySelectorAll(".mason-pill-s2").forEach((btn) => {
         btn.addEventListener("click", () => {
           const m = btn.getAttribute("data-mason");
           if (inputMasonName) inputMasonName.value = m;
-          const inputScreen3Mason = document.getElementById("inputScreen3Mason");
           if (inputScreen3Mason) inputScreen3Mason.value = m;
           currentContext.masonName = m;
+          updateActiveMasonPills(m);
         });
       });
     }
 
-    // 3. Quick Pills Screen 3 (The new entry section)
+    // 3. Quick Pills Screen 3 (Work Entry section)
     const pillsS3 = document.getElementById("quickMasonPillsScreen3");
     if (pillsS3) {
-      pillsS3.innerHTML = masons.slice(0, 10).map((m) => `
-        <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 rounded-pill mason-pill-s3" data-mason="${escapeHtml(m)}" style="font-size: 0.74rem;">
-          <i class="bi bi-person me-1"></i>${escapeHtml(m)}
-        </button>
-      `).join("");
-
+      pillsS3.innerHTML = renderPillsHTML("mason-pill-s3");
       pillsS3.querySelectorAll(".mason-pill-s3").forEach((btn) => {
         btn.addEventListener("click", () => {
           const m = btn.getAttribute("data-mason");
-          const inputScreen3Mason = document.getElementById("inputScreen3Mason");
           if (inputScreen3Mason) inputScreen3Mason.value = m;
           if (inputMasonName) inputMasonName.value = m;
           currentContext.masonName = m;
+          updateActiveMasonPills(m);
         });
       });
     }
+  }
+
+  // Live input syncing & active pill highlights
+  if (inputMasonName) {
+    inputMasonName.addEventListener("input", () => {
+      const val = inputMasonName.value.trim();
+      currentContext.masonName = val;
+      if (inputScreen3Mason) inputScreen3Mason.value = inputMasonName.value;
+      updateActiveMasonPills(val);
+    });
+  }
+
+  if (inputScreen3Mason) {
+    inputScreen3Mason.addEventListener("input", () => {
+      const val = inputScreen3Mason.value.trim();
+      currentContext.masonName = val;
+      if (inputMasonName) inputMasonName.value = inputScreen3Mason.value;
+      updateActiveMasonPills(val);
+    });
+  }
+
+  // Open Add Mason Modal helper
+  function openAddMasonModal() {
+    let prefill = "";
+    if (inputMasonName && inputMasonName.value.trim()) {
+      prefill = inputMasonName.value.trim();
+    } else if (inputScreen3Mason && inputScreen3Mason.value.trim()) {
+      prefill = inputScreen3Mason.value.trim();
+    }
+    if (inputNewMasonName) {
+      inputNewMasonName.value = prefill;
+    }
+    if (addMasonModal) {
+      addMasonModal.show();
+    } else if (addMasonModalEl && window.bootstrap && window.bootstrap.Modal) {
+      const modal = new bootstrap.Modal(addMasonModalEl);
+      modal.show();
+    }
+    setTimeout(() => {
+      if (inputNewMasonName) {
+        inputNewMasonName.focus();
+        if (inputNewMasonName.value) inputNewMasonName.select();
+      }
+    }, 350);
+  }
+
+  // Delegated click listener for any + Add New Mason buttons/pills
+  document.addEventListener("click", (e) => {
+    const trigger = e.target.closest(".btn-trigger-add-mason");
+    if (trigger) {
+      e.preventDefault();
+      openAddMasonModal();
+    }
+  });
+
+  // Handle Add Mason Form Submit
+  if (formAddNewMason) {
+    formAddNewMason.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const raw = inputNewMasonName ? inputNewMasonName.value.trim() : "";
+      if (!raw) {
+        showToast("Please enter a mason name", false);
+        return;
+      }
+      const saved = saveCustomMason(raw);
+      if (inputMasonName) inputMasonName.value = saved;
+      if (inputScreen3Mason) inputScreen3Mason.value = saved;
+      currentContext.masonName = saved;
+
+      populateMasonDatalistsAndPills(saved);
+
+      if (addMasonModal) {
+        addMasonModal.hide();
+      } else if (addMasonModalEl && window.bootstrap && window.bootstrap.Modal) {
+        const bsModal = bootstrap.Modal.getInstance(addMasonModalEl);
+        if (bsModal) bsModal.hide();
+      }
+
+      showToast(`Mason "${saved}" added and selected!`, true);
+    });
   }
 
   // Default date to today (YYYY-MM-DD)
@@ -791,10 +957,10 @@ document.addEventListener("DOMContentLoaded", () => {
       currentContext.masonName = inputMasonName.value.trim();
 
       // Pre-fill Mason in Screen 3 (the new entry section)
-      const inputScreen3Mason = document.getElementById("inputScreen3Mason");
       if (inputScreen3Mason) {
         inputScreen3Mason.value = currentContext.masonName;
       }
+      populateMasonDatalistsAndPills(currentContext.masonName);
 
       // Update Screen 3 pill context
       const screen3ContextText = document.getElementById("screen3ContextText");
@@ -813,7 +979,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const selectWorkCategory = document.getElementById("selectWorkCategory");
   const subTaskContainer = document.getElementById("subTaskContainer");
   const selectSubTask = document.getElementById("selectSubTask");
-  const inputScreen3Mason = document.getElementById("inputScreen3Mason");
+  // inputScreen3Mason is already defined in common form inputs above
   const notesContainer = document.getElementById("notesContainer");
   const textareaNotes = document.getElementById("textareaNotes");
   const notesRequiredIndicator = document.getElementById("notesRequiredIndicator");
@@ -975,7 +1141,7 @@ document.addEventListener("DOMContentLoaded", () => {
       await apiSaveLog(newLog);
 
       // Refresh dynamic mason and tower suggestions
-      populateMasonDatalistsAndPills();
+      populateMasonDatalistsAndPills(taskMason);
       populateTowerSuggestions();
 
       // Track latest logged entry for instant PDF/WhatsApp export

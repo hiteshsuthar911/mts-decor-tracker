@@ -205,12 +205,17 @@
 
         <!-- 4. Mason / Labour Name -->
         <div>
-          <label for="inputMasonName" class="form-label fw-semibold small text-secondary mb-1">
-            Mason / Labour Name <span class="text-danger">*</span>
-          </label>
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <label for="inputMasonName" class="form-label fw-semibold small text-secondary mb-0">
+              Mason / Labour Name <span class="text-danger">*</span>
+            </label>
+            <button type="button" class="btn btn-sm btn-link text-primary text-decoration-none p-0 fw-semibold small btn-trigger-add-mason">
+              <i class="bi bi-person-plus-fill me-1"></i>+ Add New Mason
+            </button>
+          </div>
           <div class="input-group">
             <span class="input-group-text bg-light text-secondary"><i class="bi bi-person-badge"></i></span>
-            <input type="text" class="form-control" id="inputMasonName" list="masonSuggestionsList" placeholder="e.g. Sampat, Imran..." required autocomplete="off">
+            <input type="text" class="form-control" id="inputMasonName" list="masonSuggestionsList" placeholder="Select or type mason name..." required autocomplete="off">
           </div>
           <datalist id="masonSuggestionsList">
             <!-- Dynamically populated from database masons -->
@@ -292,9 +297,14 @@
 
         <!-- 3. Mason / Labour for this Work Entry -->
         <div>
-          <label for="inputScreen3Mason" class="form-label fw-semibold small text-secondary mb-1">
-            Mason / Labour Name <span class="text-danger">*</span>
-          </label>
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <label for="inputScreen3Mason" class="form-label fw-semibold small text-secondary mb-0">
+              Mason / Labour Name <span class="text-danger">*</span>
+            </label>
+            <button type="button" class="btn btn-sm btn-link text-primary text-decoration-none p-0 fw-semibold small btn-trigger-add-mason">
+              <i class="bi bi-person-plus-fill me-1"></i>+ Add New Mason
+            </button>
+          </div>
           <div class="input-group">
             <span class="input-group-text bg-light text-secondary"><i class="bi bi-person-badge"></i></span>
             <input type="text" class="form-control" id="inputScreen3Mason" list="masonSuggestionsList" placeholder="Assign mason for this work..." required autocomplete="off">
@@ -626,6 +636,38 @@
           </div>
         </div>
       </div>
+    <!-- Add New Mason Modal -->
+    <div class="modal fade" id="addMasonModal" tabindex="-1" aria-labelledby="addMasonModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered px-3">
+        <div class="modal-content shadow border-0">
+          <div class="modal-header py-2 px-3 bg-light border-bottom">
+            <h6 class="modal-title fw-bold text-dark mb-0" id="addMasonModalLabel">
+              <i class="bi bi-person-plus-fill text-primary me-2"></i>Add New Mason / Labour
+            </h6>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <form id="formAddNewMason">
+            <div class="modal-body p-3">
+              <label for="inputNewMasonName" class="form-label fw-semibold small text-secondary mb-1">
+                Mason / Worker Name <span class="text-danger">*</span>
+              </label>
+              <div class="input-group mb-2">
+                <span class="input-group-text bg-light text-secondary"><i class="bi bi-person-badge"></i></span>
+                <input type="text" class="form-control" id="inputNewMasonName" placeholder="e.g. Ramesh Kumar, Mukesh..." required autocomplete="off">
+              </div>
+              <small class="text-muted" style="font-size: 0.78rem;">
+                This mason will immediately appear in your quick suggestion chips and be remembered for all future entries.
+              </small>
+            </div>
+            <div class="modal-footer py-2 px-3 bg-light border-top">
+              <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-primary btn-sm fw-semibold px-3" id="btnSaveNewMason">
+                <i class="bi bi-check-lg me-1"></i>Save &amp; Select Mason
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
 
   </div>
@@ -638,9 +680,9 @@
   <!-- PDF.js for universal mobile & desktop canvas PDF rendering -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <!-- Constants, Logo & Data Logic -->
-  <script src="js/logo.js?v=14"></script>
-  <script src="js/constants.js?v=14"></script>
+  <script src="js/logo.js?v=15"></script>
+  <script src="js/constants.js?v=15"></script>
   <!-- Main Application Logic -->
-  <script src="js/app.js?v=14"></script>
+  <script src="js/app.js?v=15"></script>
 </body>
 </html>
