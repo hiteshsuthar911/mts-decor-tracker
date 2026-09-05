@@ -397,12 +397,20 @@ document.addEventListener("DOMContentLoaded", () => {
   const flatValidationMessage = document.getElementById("flatValidationMessage");
   const inputDate = document.getElementById("inputDate");
   const inputMasonName = document.getElementById("inputMasonName");
+  const selectScreen2Mason = document.getElementById("selectScreen2Mason");
   const inputScreen3Mason = document.getElementById("inputScreen3Mason");
+  const selectScreen3LabourDropdown = document.getElementById("selectScreen3LabourDropdown");
+  const btnScreen3AddLabour = document.getElementById("btnScreen3AddLabour");
+  const screen3AssignedLaboursList = document.getElementById("screen3AssignedLaboursList");
+  const assignedLaboursCountBadge = document.getElementById("assignedLaboursCountBadge");
   const inputTower = document.getElementById("inputTower");
   const projectSuggestionsDatalist = document.getElementById("projectSuggestions");
   const towerSuggestionsDatalist = document.getElementById("towerSuggestions");
   const btnLockFromScreen2 = document.getElementById("btnLockFromScreen2");
   const btnGoToDashboardFromScreen2 = document.getElementById("btnGoToDashboardFromScreen2");
+
+  // State: Array of labours assigned to the current work entry in Screen 3
+  let currentTaskAssignedMasons = [];
 
   // Populate project datalist
   if (projectSuggestionsDatalist && Array.isArray(PROJECT_SUGGESTIONS)) {
@@ -462,6 +470,10 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!name) return;
       const t = String(name).trim();
       if (!t || t === "-" || t.toLowerCase() === "unassigned") return;
+      if (t.includes(",")) {
+        t.split(",").forEach((sub) => pushIfNew(sub));
+        return;
+      }
       if (!list.some((existing) => existing.toLowerCase() === t.toLowerCase())) {
         list.push(t);
       }
@@ -484,36 +496,182 @@ document.addEventListener("DOMContentLoaded", () => {
     return list;
   }
 
-  // Helper to visually update active/selected pill highlight
-  function updateActiveMasonPills(activeName) {
-    const target = (activeName || "").trim().toLowerCase();
-    const allPillBtns = document.querySelectorAll(".mason-pill-s2, .mason-pill-s3");
-    allPillBtns.forEach((btn) => {
+  // Helper to visually update active/selected pill highlights
+  function updateActiveMasonPills() {
+    // Screen 2 active pill
+    const s2Target = ((selectScreen2Mason && selectScreen2Mason.value) || (inputMasonName && inputMasonName.value) || currentContext.masonName || "").trim().toLowerCase();
+    document.querySelectorAll(".mason-pill-s2").forEach((btn) => {
       const m = (btn.getAttribute("data-mason") || "").trim().toLowerCase();
       const icon = btn.querySelector("i");
-      if (target && m === target) {
+      if (s2Target && m === s2Target) {
         btn.classList.add("active");
-        if (icon) {
-          icon.className = "bi bi-check2 me-1";
-        }
+        if (icon) icon.className = "bi bi-check2 me-1";
       } else {
         btn.classList.remove("active");
-        if (icon) {
-          icon.className = "bi bi-person me-1";
-        }
+        if (icon) icon.className = "bi bi-person me-1";
+      }
+    });
+
+    // Screen 3 active pills: any mason present in currentTaskAssignedMasons
+    document.querySelectorAll(".mason-pill-s3").forEach((btn) => {
+      const m = (btn.getAttribute("data-mason") || "").trim().toLowerCase();
+      const icon = btn.querySelector("i");
+      const isAssigned = currentTaskAssignedMasons.some((x) => x.toLowerCase() === m);
+      if (isAssigned) {
+        btn.classList.add("active");
+        if (icon) icon.className = "bi bi-check2 me-1";
+      } else {
+        btn.classList.remove("active");
+        if (icon) icon.className = "bi bi-person me-1";
       }
     });
   }
 
-  // Populate mason datalist and quick-selection pills on Screen 2 and Screen 3
+  // Multi-Labour State Management for Screen 3
+  function initScreen3Masons(initialMason) {
+    currentTaskAssignedMasons = [];
+    if (initialMason && initialMason.trim() && initialMason !== "-" && initialMason.toLowerCase() !== "unassigned") {
+      initialMason.split(",").forEach((sub) => {
+        const t = sub.trim();
+        if (t && !currentTaskAssignedMasons.some((x) => x.toLowerCase() === t.toLowerCase())) {
+          currentTaskAssignedMasons.push(t);
+        }
+      });
+    }
+    renderScreen3AssignedMasons();
+  }
+
+  function addLabourToCurrentTask(masonName) {
+    if (!masonName) return;
+    const trimmed = masonName.trim();
+    if (trimmed === "__ADD_NEW__") {
+      openAddMasonModal();
+      return;
+    }
+    if (!trimmed) return;
+
+    if (currentTaskAssignedMasons.some((x) => x.toLowerCase() === trimmed.toLowerCase())) {
+      showToast(`${trimmed} is already assigned to this work`, false);
+      return;
+    }
+
+    currentTaskAssignedMasons.push(trimmed);
+    renderScreen3AssignedMasons();
+    populateMasonDropdownsOnly();
+    showToast(`Added ${trimmed} to work entry!`, true);
+  }
+
+  function removeLabourFromCurrentTask(idx) {
+    if (idx >= 0 && idx < currentTaskAssignedMasons.length) {
+      const removed = currentTaskAssignedMasons.splice(idx, 1);
+      renderScreen3AssignedMasons();
+      populateMasonDropdownsOnly();
+      showToast(`Removed ${removed[0]} from work entry`, false);
+    }
+  }
+
+  function toggleLabourInCurrentTask(masonName) {
+    if (!masonName) return;
+    const trimmed = masonName.trim();
+    const existingIndex = currentTaskAssignedMasons.findIndex((x) => x.toLowerCase() === trimmed.toLowerCase());
+    if (existingIndex >= 0) {
+      removeLabourFromCurrentTask(existingIndex);
+    } else {
+      addLabourToCurrentTask(trimmed);
+    }
+  }
+
+  function renderScreen3AssignedMasons() {
+    const container = document.getElementById("screen3AssignedLaboursList");
+    const countBadge = document.getElementById("assignedLaboursCountBadge");
+    const hiddenInput = document.getElementById("inputScreen3Mason");
+
+    const joined = currentTaskAssignedMasons.join(", ");
+    if (hiddenInput) {
+      hiddenInput.value = joined;
+      currentContext.masonName = joined;
+    }
+
+    if (countBadge) {
+      const count = currentTaskAssignedMasons.length;
+      countBadge.textContent = count === 1 ? "1 Worker" : `${count} Workers`;
+      if (count === 0) {
+        countBadge.className = "badge bg-warning-subtle text-warning-emphasis fw-semibold";
+      } else {
+        countBadge.className = "badge bg-primary-subtle text-primary fw-semibold";
+      }
+    }
+
+    if (!container) return;
+
+    if (currentTaskAssignedMasons.length === 0) {
+      container.innerHTML = `
+        <div class="text-muted small fst-italic py-1 px-2 d-flex align-items-center gap-1">
+          <i class="bi bi-info-circle text-secondary"></i> No labour assigned yet. Pick from the dropdown below and click <strong>Add</strong>, or tap any suggestion pill.
+        </div>
+      `;
+    } else {
+      container.innerHTML = currentTaskAssignedMasons.map((m, idx) => `
+        <div class="assigned-labour-chip">
+          <i class="bi bi-person-fill text-primary"></i>
+          <span>${escapeHtml(m)}</span>
+          <button type="button" class="btn-remove-assigned-labour btn-close" style="font-size: 0.65rem;" data-mason-idx="${idx}" title="Remove ${escapeHtml(m)}" aria-label="Remove"></button>
+        </div>
+      `).join("");
+
+      container.querySelectorAll(".btn-remove-assigned-labour").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.preventDefault();
+          const idx = parseInt(btn.getAttribute("data-mason-idx"), 10);
+          removeLabourFromCurrentTask(idx);
+        });
+      });
+    }
+
+    updateActiveMasonPills();
+  }
+
+  // Populate only the dropdowns when labours change
+  function populateMasonDropdownsOnly() {
+    const masons = getAllKnownMasons();
+    if (selectScreen3LabourDropdown) {
+      let optionsHtml = `<option value="" selected disabled>Select labour from dropdown...</option>`;
+      optionsHtml += masons.map((m) => {
+        const isAssigned = currentTaskAssignedMasons.some((x) => x.toLowerCase() === m.toLowerCase());
+        const label = isAssigned ? `${escapeHtml(m)} (Already Added)` : escapeHtml(m);
+        return `<option value="${escapeHtml(m)}">${label}</option>`;
+      }).join("");
+      optionsHtml += `<option value="__ADD_NEW__" class="fw-bold text-primary">➕ + Create New Mason...</option>`;
+      selectScreen3LabourDropdown.innerHTML = optionsHtml;
+    }
+  }
+
+  // Populate mason dropdowns, datalists, and quick-selection pills on Screen 2 and Screen 3
   function populateMasonDatalistsAndPills(selectedMason) {
     const masons = getAllKnownMasons();
     const currentMason = (selectedMason !== undefined
       ? selectedMason
-      : ((inputMasonName && inputMasonName.value) || (inputScreen3Mason && inputScreen3Mason.value) || currentContext.masonName || "")
+      : ((selectScreen2Mason && selectScreen2Mason.value) || (inputMasonName && inputMasonName.value) || currentContext.masonName || "")
     ).trim();
 
-    // 1. Autocomplete Datalist
+    // 1. Screen 2 Dropdown (<select id="selectScreen2Mason">)
+    if (selectScreen2Mason) {
+      let s2Html = `<option value="" disabled ${!currentMason ? "selected" : ""}>Select mason from dropdown...</option>`;
+      s2Html += masons.map((m) => {
+        const isSel = currentMason && m.toLowerCase() === currentMason.toLowerCase();
+        return `<option value="${escapeHtml(m)}" ${isSel ? "selected" : ""}>${escapeHtml(m)}</option>`;
+      }).join("");
+      s2Html += `<option value="__ADD_NEW__" class="fw-bold text-primary">➕ + Add New Mason...</option>`;
+      selectScreen2Mason.innerHTML = s2Html;
+      if (currentMason && inputMasonName) {
+        inputMasonName.value = currentMason;
+      }
+    }
+
+    // 2. Screen 3 Multi-Labour Dropdown (<select id="selectScreen3LabourDropdown">)
+    populateMasonDropdownsOnly();
+
+    // 3. Autocomplete Datalist
     const datalist = document.getElementById("masonSuggestionsList");
     if (datalist) {
       datalist.innerHTML = masons.map(
@@ -521,73 +679,102 @@ document.addEventListener("DOMContentLoaded", () => {
       ).join("");
     }
 
-    // Builder for pill HTML with dedicated + Add New button
-    const renderPillsHTML = (pillClass) => {
-      let html = `
+    // 4. Quick Pills Screen 2 (Click sets primary mason)
+    const pillsS2 = document.getElementById("quickMasonPillsScreen2");
+    if (pillsS2) {
+      let htmlS2 = `
         <button type="button" class="mason-add-pill-btn btn-trigger-add-mason" title="Add a new mason / labour">
           <i class="bi bi-person-plus-fill"></i>+ Add New
         </button>
       `;
-      html += masons.map((m) => {
+      htmlS2 += masons.map((m) => {
         const isSelected = Boolean(currentMason && m.toLowerCase() === currentMason.toLowerCase());
         const activeClass = isSelected ? " active" : "";
         const icon = isSelected ? "bi-check2" : "bi-person";
         return `
-          <button type="button" class="mason-pill-btn ${pillClass}${activeClass}" data-mason="${escapeHtml(m)}">
+          <button type="button" class="mason-pill-btn mason-pill-s2${activeClass}" data-mason="${escapeHtml(m)}">
             <i class="bi ${icon} me-1"></i>${escapeHtml(m)}
           </button>
         `;
       }).join("");
-      return html;
-    };
-
-    // 2. Quick Pills Screen 2
-    const pillsS2 = document.getElementById("quickMasonPillsScreen2");
-    if (pillsS2) {
-      pillsS2.innerHTML = renderPillsHTML("mason-pill-s2");
+      pillsS2.innerHTML = htmlS2;
       pillsS2.querySelectorAll(".mason-pill-s2").forEach((btn) => {
         btn.addEventListener("click", () => {
           const m = btn.getAttribute("data-mason");
+          if (selectScreen2Mason) selectScreen2Mason.value = m;
           if (inputMasonName) inputMasonName.value = m;
-          if (inputScreen3Mason) inputScreen3Mason.value = m;
           currentContext.masonName = m;
-          updateActiveMasonPills(m);
+          updateActiveMasonPills();
         });
       });
     }
 
-    // 3. Quick Pills Screen 3 (Work Entry section)
+    // 5. Quick Pills Screen 3 (Click toggles/adds labour to task!)
     const pillsS3 = document.getElementById("quickMasonPillsScreen3");
     if (pillsS3) {
-      pillsS3.innerHTML = renderPillsHTML("mason-pill-s3");
+      let htmlS3 = `
+        <button type="button" class="mason-add-pill-btn btn-trigger-add-mason" title="Add a new mason / labour">
+          <i class="bi bi-person-plus-fill"></i>+ Add New
+        </button>
+      `;
+      htmlS3 += masons.map((m) => {
+        const isAssigned = currentTaskAssignedMasons.some((x) => x.toLowerCase() === m.toLowerCase());
+        const activeClass = isAssigned ? " active" : "";
+        const icon = isAssigned ? "bi-check2" : "bi-person";
+        return `
+          <button type="button" class="mason-pill-btn mason-pill-s3${activeClass}" data-mason="${escapeHtml(m)}" title="Tap to add or remove">
+            <i class="bi ${icon} me-1"></i>${escapeHtml(m)}
+          </button>
+        `;
+      }).join("");
+      pillsS3.innerHTML = htmlS3;
       pillsS3.querySelectorAll(".mason-pill-s3").forEach((btn) => {
         btn.addEventListener("click", () => {
           const m = btn.getAttribute("data-mason");
-          if (inputScreen3Mason) inputScreen3Mason.value = m;
-          if (inputMasonName) inputMasonName.value = m;
-          currentContext.masonName = m;
-          updateActiveMasonPills(m);
+          toggleLabourInCurrentTask(m);
         });
       });
     }
+
+    updateActiveMasonPills();
   }
 
-  // Live input syncing & active pill highlights
-  if (inputMasonName) {
-    inputMasonName.addEventListener("input", () => {
-      const val = inputMasonName.value.trim();
+  // Handle Screen 2 Mason Dropdown selection
+  if (selectScreen2Mason) {
+    selectScreen2Mason.addEventListener("change", () => {
+      const val = selectScreen2Mason.value;
+      if (val === "__ADD_NEW__") {
+        selectScreen2Mason.value = inputMasonName ? inputMasonName.value : "";
+        openAddMasonModal();
+        return;
+      }
+      if (inputMasonName) inputMasonName.value = val;
       currentContext.masonName = val;
-      if (inputScreen3Mason) inputScreen3Mason.value = inputMasonName.value;
-      updateActiveMasonPills(val);
+      updateActiveMasonPills();
     });
   }
 
-  if (inputScreen3Mason) {
-    inputScreen3Mason.addEventListener("input", () => {
-      const val = inputScreen3Mason.value.trim();
-      currentContext.masonName = val;
-      if (inputMasonName) inputMasonName.value = inputScreen3Mason.value;
-      updateActiveMasonPills(val);
+  // Handle Screen 3 Add Labour Dropdown & Add Button
+  if (selectScreen3LabourDropdown) {
+    selectScreen3LabourDropdown.addEventListener("change", () => {
+      const val = selectScreen3LabourDropdown.value;
+      if (val === "__ADD_NEW__") {
+        selectScreen3LabourDropdown.value = "";
+        openAddMasonModal();
+      }
+    });
+  }
+
+  if (btnScreen3AddLabour) {
+    btnScreen3AddLabour.addEventListener("click", (e) => {
+      e.preventDefault();
+      const val = selectScreen3LabourDropdown ? selectScreen3LabourDropdown.value : "";
+      if (!val || val === "__ADD_NEW__") {
+        showToast("Please choose a labour from the dropdown first", false);
+        return;
+      }
+      addLabourToCurrentTask(val);
+      if (selectScreen3LabourDropdown) selectScreen3LabourDropdown.value = "";
     });
   }
 
@@ -596,8 +783,6 @@ document.addEventListener("DOMContentLoaded", () => {
     let prefill = "";
     if (inputMasonName && inputMasonName.value.trim()) {
       prefill = inputMasonName.value.trim();
-    } else if (inputScreen3Mason && inputScreen3Mason.value.trim()) {
-      prefill = inputScreen3Mason.value.trim();
     }
     if (inputNewMasonName) {
       inputNewMasonName.value = prefill;
@@ -635,11 +820,19 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
       const saved = saveCustomMason(raw);
+
+      // Set for Screen 2
       if (inputMasonName) inputMasonName.value = saved;
-      if (inputScreen3Mason) inputScreen3Mason.value = saved;
+      if (selectScreen2Mason) selectScreen2Mason.value = saved;
       currentContext.masonName = saved;
 
+      // Also automatically add to Screen 3 current task if on Screen 3 or initializing
+      if (!currentTaskAssignedMasons.some((x) => x.toLowerCase() === saved.toLowerCase())) {
+        currentTaskAssignedMasons.push(saved);
+      }
+
       populateMasonDatalistsAndPills(saved);
+      renderScreen3AssignedMasons();
 
       const modal = (window.bootstrap && window.bootstrap.Modal && addMasonModalEl)
         ? bootstrap.Modal.getOrCreateInstance(addMasonModalEl)
@@ -648,7 +841,7 @@ document.addEventListener("DOMContentLoaded", () => {
         modal.hide();
       }
 
-      showToast(`Mason "${saved}" added and selected!`, true);
+      showToast(`Mason "${saved}" created and added to task!`, true);
     });
   }
 
@@ -954,13 +1147,12 @@ document.addEventListener("DOMContentLoaded", () => {
       currentContext.flatNo = flatVal;
       currentContext.floorFlat = compositeLocation;
       currentContext.date = inputDate.value;
-      currentContext.masonName = inputMasonName.value.trim();
+      const primaryMason = (selectScreen2Mason && selectScreen2Mason.value) || (inputMasonName && inputMasonName.value.trim()) || "";
+      currentContext.masonName = primaryMason;
 
-      // Pre-fill Mason in Screen 3 (the new entry section)
-      if (inputScreen3Mason) {
-        inputScreen3Mason.value = currentContext.masonName;
-      }
-      populateMasonDatalistsAndPills(currentContext.masonName);
+      // Initialize Screen 3 assigned labours with this primary mason
+      initScreen3Masons(primaryMason);
+      populateMasonDatalistsAndPills(primaryMason);
 
       // Update Screen 3 pill context
       const screen3ContextText = document.getElementById("screen3ContextText");
@@ -1121,7 +1313,27 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      const taskMason = (inputScreen3Mason && inputScreen3Mason.value.trim()) || currentContext.masonName || "Unassigned";
+      if (currentTaskAssignedMasons.length === 0) {
+        const pendingMason = selectScreen3LabourDropdown ? selectScreen3LabourDropdown.value : "";
+        if (pendingMason && pendingMason !== "__ADD_NEW__") {
+          currentTaskAssignedMasons.push(pendingMason);
+          renderScreen3AssignedMasons();
+        } else if (inputScreen3Mason && inputScreen3Mason.value.trim()) {
+          inputScreen3Mason.value.trim().split(",").forEach((m) => {
+            if (m.trim()) currentTaskAssignedMasons.push(m.trim());
+          });
+          renderScreen3AssignedMasons();
+        } else if (currentContext.masonName && currentContext.masonName !== "Unassigned") {
+          currentTaskAssignedMasons.push(currentContext.masonName);
+          renderScreen3AssignedMasons();
+        } else {
+          showToast("Please assign at least one mason/labour to this work entry", false);
+          if (selectScreen3LabourDropdown) selectScreen3LabourDropdown.focus();
+          return;
+        }
+      }
+
+      const taskMason = currentTaskAssignedMasons.join(", ");
       currentContext.masonName = taskMason;
 
       const newLog = {
@@ -1141,8 +1353,9 @@ document.addEventListener("DOMContentLoaded", () => {
       await apiSaveLog(newLog);
 
       // Refresh dynamic mason and tower suggestions
-      populateMasonDatalistsAndPills(taskMason);
+      populateMasonDatalistsAndPills();
       populateTowerSuggestions();
+      renderScreen3AssignedMasons();
 
       // Track latest logged entry for instant PDF/WhatsApp export
       latestLoggedEntry = newLog;
@@ -1979,7 +2192,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="d-flex justify-content-between align-items-start mb-2">
             <div>
               <span class="badge bg-light text-dark border me-1"><i class="bi bi-calendar-event me-1"></i>${formattedDate}</span>
-              <span class="badge bg-secondary-subtle text-secondary"><i class="bi bi-person me-1"></i>${escapeHtml(log.masonName || "Unassigned")}</span>
+              ${(log.masonName || "Unassigned").split(",").map((m) => `<span class="badge bg-secondary-subtle text-secondary me-1"><i class="bi bi-person me-1"></i>${escapeHtml(m.trim())}</span>`).join("")}
             </div>
             <div class="d-flex align-items-center gap-1">
               <button type="button" class="btn btn-outline-success btn-sm rounded-circle p-0 d-flex align-items-center justify-content-center" data-wa-id="${log.id}" title="Share on WhatsApp" style="width: 32px; height: 32px; min-height: 32px;">

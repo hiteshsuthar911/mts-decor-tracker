@@ -206,7 +206,7 @@
         <!-- 4. Mason / Labour Name -->
         <div>
           <div class="d-flex justify-content-between align-items-center mb-1">
-            <label for="inputMasonName" class="form-label fw-semibold small text-secondary mb-0">
+            <label for="selectScreen2Mason" class="form-label fw-semibold small text-secondary mb-0">
               Mason / Labour Name <span class="text-danger">*</span>
             </label>
             <button type="button" class="btn btn-sm btn-link text-primary text-decoration-none p-0 fw-semibold small btn-trigger-add-mason">
@@ -215,14 +215,16 @@
           </div>
           <div class="input-group">
             <span class="input-group-text bg-light text-secondary"><i class="bi bi-person-badge"></i></span>
-            <input type="text" class="form-control" id="inputMasonName" list="masonSuggestionsList" placeholder="Select or type mason name..." required autocomplete="off">
+            <select class="form-select" id="selectScreen2Mason" required>
+              <option value="" disabled selected>Select mason from dropdown...</option>
+              <!-- Populated dynamically -->
+              <option value="__ADD_NEW__" class="fw-bold text-primary">➕ + Add New Mason...</option>
+            </select>
+            <input type="hidden" id="inputMasonName" name="inputMasonName" required>
           </div>
-          <datalist id="masonSuggestionsList">
-            <!-- Dynamically populated from database masons -->
-          </datalist>
           <div class="mt-2">
             <div class="d-flex align-items-center justify-content-between mb-1">
-              <span class="small text-muted" style="font-size: 0.76rem;">Quick Select Mason:</span>
+              <span class="small text-muted" style="font-size: 0.76rem;">Quick Tap Suggestion:</span>
             </div>
             <div class="d-flex flex-wrap gap-1" id="quickMasonPillsScreen2">
               <!-- Dynamically rendered pills -->
@@ -295,23 +297,53 @@
           </div>
         </div>
 
-        <!-- 3. Mason / Labour for this Work Entry -->
-        <div>
-          <div class="d-flex justify-content-between align-items-center mb-1">
-            <label for="inputScreen3Mason" class="form-label fw-semibold small text-secondary mb-0">
-              Mason / Labour Name <span class="text-danger">*</span>
+        <!-- 3. Mason / Labour for this Work Entry (Supports Adding Multiple Labours) -->
+        <div class="card border border-light-subtle bg-light-subtle p-3 rounded-3 mb-2">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <label class="form-label fw-bold small text-dark mb-0 d-flex align-items-center gap-2">
+              <i class="bi bi-people-fill text-primary"></i> Assigned Labours / Masons <span class="text-danger">*</span>
             </label>
             <button type="button" class="btn btn-sm btn-link text-primary text-decoration-none p-0 fw-semibold small btn-trigger-add-mason">
               <i class="bi bi-person-plus-fill me-1"></i>+ Add New Mason
             </button>
           </div>
-          <div class="input-group">
-            <span class="input-group-text bg-light text-secondary"><i class="bi bi-person-badge"></i></span>
-            <input type="text" class="form-control" id="inputScreen3Mason" list="masonSuggestionsList" placeholder="Assign mason for this work..." required autocomplete="off">
-          </div>
-          <div class="mt-2">
+
+          <!-- Active Assigned Labours Badges Container -->
+          <div class="mb-2">
             <div class="d-flex align-items-center justify-content-between mb-1">
-              <span class="small text-muted" style="font-size: 0.76rem;">Quick Select Mason:</span>
+              <span class="small text-muted" style="font-size: 0.76rem;">Assigned to this Work:</span>
+              <span class="badge bg-primary-subtle text-primary fw-semibold" id="assignedLaboursCountBadge">1 Worker</span>
+            </div>
+            <div id="screen3AssignedLaboursList" class="d-flex flex-wrap gap-2 p-2 bg-white rounded-3 border" style="min-height: 48px; align-items: center;">
+              <!-- Dynamically rendered assigned worker chips -->
+            </div>
+          </div>
+
+          <!-- Dropdown Suggestion List + Add Button -->
+          <div class="mb-2">
+            <label for="selectScreen3LabourDropdown" class="form-label small text-secondary fw-semibold mb-1" style="font-size: 0.78rem;">
+              Add Labour to this Work:
+            </label>
+            <div class="input-group">
+              <span class="input-group-text bg-white text-secondary"><i class="bi bi-person-plus"></i></span>
+              <select class="form-select" id="selectScreen3LabourDropdown">
+                <option value="" selected disabled>Select labour from dropdown...</option>
+                <!-- Populated dynamically -->
+                <option value="__ADD_NEW__" class="fw-bold text-primary">➕ + Create New Mason...</option>
+              </select>
+              <button type="button" class="btn btn-primary fw-semibold px-3 d-flex align-items-center gap-1" id="btnScreen3AddLabour">
+                <i class="bi bi-plus-lg"></i> Add
+              </button>
+            </div>
+          </div>
+
+          <!-- Hidden input for form submission & validation -->
+          <input type="hidden" id="inputScreen3Mason" name="inputScreen3Mason" required>
+
+          <!-- Quick Select Pills (Tap to Add / Remove) -->
+          <div class="mt-1">
+            <div class="d-flex align-items-center justify-content-between mb-1">
+              <span class="small text-muted" style="font-size: 0.76rem;">Quick Tap to Add / Remove:</span>
             </div>
             <div class="d-flex flex-wrap gap-1" id="quickMasonPillsScreen3">
               <!-- Dynamically rendered pills -->
@@ -682,9 +714,9 @@
   <!-- PDF.js for universal mobile & desktop canvas PDF rendering -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <!-- Constants, Logo & Data Logic -->
-  <script src="js/logo.js?v=16"></script>
-  <script src="js/constants.js?v=16"></script>
+  <script src="js/logo.js?v=17"></script>
+  <script src="js/constants.js?v=17"></script>
   <!-- Main Application Logic -->
-  <script src="js/app.js?v=16"></script>
+  <script src="js/app.js?v=17"></script>
 </body>
 </html>

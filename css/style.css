@@ -338,3 +338,36 @@ body {
   border-style: solid;
 }
 
+/* Multi-Labour Assigned Chips in Work Entry */
+.assigned-labour-chip {
+  background-color: #f0fdfa;
+  border: 1px solid #99f6e4;
+  color: #0f766e;
+  padding: 4px 12px;
+  border-radius: 50rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  animation: fadeInChip 0.2s ease-in-out;
+}
+
+.assigned-labour-chip .btn-remove-assigned-labour {
+  cursor: pointer;
+  opacity: 0.65;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.assigned-labour-chip .btn-remove-assigned-labour:hover {
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+@keyframes fadeInChip {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+
