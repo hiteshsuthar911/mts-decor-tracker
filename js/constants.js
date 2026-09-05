@@ -31,6 +31,8 @@ const WORK_LOGIC_MATRIX = {
     "Floor Tiles",
     "Wall Tiles",
     "Stone Sill",
+    "Floor Italian",
+    "Dedo Italian",
     "Counter",
     "Other"
   ],
@@ -64,10 +66,43 @@ const WORK_LOGIC_MATRIX = {
     "Treads & Risers",
     "Skirting",
     "Stone Sill",
+    "Landing Tiles",
+    "Other"
+  ],
+  "Group Lobby": [
+    "Floor Tiles",
+    "Koba",
+    "Floor Italian",
+    "Dedo Italian",
+    "Inlay Work",
+    "Windowsill",
+    "Spotted Marble Sill",
+    "Counter",
+    "Other"
+  ],
+  "Gazibo": [
+    "Floor Tiles",
+    "Floor Koba",
+    "Dedo Tiles",
+    "Other"
+  ],
+  "Podium": [
+    "Koba",
+    "Floor Tiles",
+    "Spotted Marble Sill",
+    "Stone Sill",
+    "Other"
+  ],
+  "Compound Area": [
+    "Appoxie / Epoxy Filling",
+    "Floor Tiles",
+    "Floor Koba",
+    "Compound Wall Tiles",
+    "Gate Ramp",
     "Other"
   ],
   "Terrace": [
-    "Koba / Waterproofing",
+    "Koba",
     "Floor Tiles",
     "Skirting",
     "Other"
