@@ -1,0 +1,26 @@
+{
+  "name": "mts-decor-tracker",
+  "version": "1.0.0",
+  "description": "MTS Decor Daily Work Progress Tracker - Bootstrap Light Theme",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js"
+  },
+  "keywords": [
+    "construction",
+    "tracker",
+    "bootstrap",
+    "mts-decor"
+  ],
+  "author": "MTS Decor",
+  "license": "MIT",
+  "devDependencies": {
+    "serve": "^14.2.4"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "mongodb": "^7.6.0"
+  }
+}

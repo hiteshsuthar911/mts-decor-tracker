@@ -1,0 +1,286 @@
+/* MTS Decor Tracker - Bootstrap Light Theme Custom Styles */
+
+:root {
+  --mts-primary: #0d6efd;
+  --mts-primary-hover: #0b5ed7;
+  --mts-secondary: #475569;
+  --mts-bg: #f8fafc;
+  --mts-card-bg: #ffffff;
+  --mts-border: #e2e8f0;
+  --mts-text-main: #0f172a;
+  --mts-text-muted: #64748b;
+  --mts-success: #198754;
+  --touch-target-height: 48px;
+}
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--mts-bg);
+  color: var(--mts-text-main);
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Touch targets >= 48px */
+.btn,
+.form-control,
+.form-select,
+.input-group-text {
+  min-height: var(--touch-target-height);
+  font-size: 1rem;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: #86b7fe;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+}
+
+/* App container constraints for comfortable mobile ergonomics */
+.app-viewport {
+  max-width: 580px;
+  margin: 0 auto;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  background-color: #ffffff;
+  box-shadow: 0 0 25px rgba(0, 0, 0, 0.04);
+}
+
+/* Screen Transitions */
+.app-screen {
+  display: none;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.22s ease-in-out, transform 0.22s ease-in-out;
+  flex: 1;
+}
+
+.app-screen.active {
+  display: flex;
+  flex-direction: column;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Branding */
+.brand-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+  color: white;
+  font-size: 1.65rem;
+  font-weight: 700;
+  box-shadow: 0 6px 16px rgba(13, 110, 253, 0.25);
+}
+
+/* Screen 1: PIN Security */
+.pin-display-group {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.pin-digit-box {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  border: 2px solid var(--mts-border);
+  background-color: #ffffff;
+  font-size: 1.6rem;
+  font-weight: 600;
+  text-align: center;
+  line-height: 50px;
+  color: var(--mts-text-main);
+  transition: all 0.15s ease-in-out;
+}
+
+.pin-digit-box.filled {
+  border-color: var(--mts-primary);
+  background-color: rgba(13, 110, 253, 0.06);
+  color: var(--mts-primary);
+}
+
+.pin-digit-box:focus {
+  outline: none;
+  border-color: var(--mts-primary);
+  box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.18);
+}
+
+/* Numeric On-Screen Keypad */
+.keypad-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  max-width: 320px;
+  margin: 10px auto 0 auto;
+}
+
+.keypad-btn {
+  height: 60px;
+  border-radius: 16px;
+  font-size: 1.45rem;
+  font-weight: 600;
+  border: 1px solid var(--mts-border);
+  background-color: #ffffff;
+  color: var(--mts-text-main);
+  transition: all 0.12s ease-in-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.keypad-btn:hover {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.keypad-btn:active {
+  transform: scale(0.95);
+  background-color: #e2e8f0;
+}
+
+.keypad-btn.action-btn {
+  font-size: 1.15rem;
+  color: var(--mts-secondary);
+}
+
+/* Shake Animation for Invalid PIN */
+@keyframes shakeAnimation {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-10px); }
+  40%, 80% { transform: translateX(10px); }
+}
+
+.animate-shake {
+  animation: shakeAnimation 0.4s ease-in-out;
+}
+
+/* Screen 3 Context Pill */
+.context-pill {
+  background-color: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+  border-radius: 50rem;
+  padding: 8px 16px;
+  font-weight: 600;
+  font-size: 0.92rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Quick Flat Selection Pills */
+.flat-pill-btn {
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background-color: #f8fafc;
+  color: #1e293b;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.12s ease-in-out;
+}
+
+.flat-pill-btn:hover {
+  background-color: #e0f2fe;
+  border-color: #7dd3fc;
+  color: #0369a1;
+}
+
+.flat-pill-btn.active {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(13, 110, 253, 0.25);
+}
+
+/* Cards & Feed in Screen 4 */
+.task-card {
+  background-color: #ffffff;
+  border: 1px solid var(--mts-border);
+  border-radius: 14px;
+  padding: 16px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
+}
+
+.task-card:hover {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+}
+
+.task-category-pill {
+  font-size: 0.82rem;
+  font-weight: 600;
+  background-color: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #dbeafe;
+  border-radius: 6px;
+  padding: 4px 10px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.task-badge-qty {
+  font-size: 0.86rem;
+  font-weight: 700;
+  background-color: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+  border-radius: 6px;
+  padding: 4px 10px;
+}
+
+.task-delete-btn {
+  color: #94a3b8;
+  background: transparent;
+  border: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.task-delete-btn:hover {
+  color: #dc3545;
+  background-color: #fee2e2;
+}
+
+/* Sticky Bottom Bar */
+.bottom-utility-bar {
+  position: sticky;
+  bottom: 0;
+  background-color: #ffffff;
+  border-top: 1px solid var(--mts-border);
+  padding: 12px 16px;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.03);
+  z-index: 100;
+}
+
+/* Modal styling */
+.modal-content {
+  border-radius: 18px;
+  border: 1px solid var(--mts-border);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+/* Toast container */
+.toast-container {
+  z-index: 1080;
+}
