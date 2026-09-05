@@ -370,4 +370,39 @@ body {
   to { opacity: 1; transform: scale(1); }
 }
 
+/* Dynamic Mason Repeater Rows */
+.mason-row-item {
+  position: relative;
+  animation: fadeInRow 0.18s ease-in-out;
+}
 
+@keyframes fadeInRow {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.mason-row-item .form-select,
+.mason-row-item .form-control {
+  font-size: 0.92rem;
+  font-weight: 500;
+  border-color: #cbd5e1;
+}
+
+.mason-row-item .form-select:focus,
+.mason-row-item .form-control:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+}
+
+.mason-row-item .btn-remove-row {
+  border-color: #fecaca;
+  color: #dc2626;
+  background-color: #fef2f2;
+  transition: all 0.15s ease;
+}
+
+.mason-row-item .btn-remove-row:hover {
+  background-color: #fee2e2;
+  border-color: #f87171;
+  color: #b91c1c;
+}
