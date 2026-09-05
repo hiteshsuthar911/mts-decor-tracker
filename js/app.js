@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentPin = "";
   let currentContext = {
     projectName: "",
+    tower: "",
     floorFlat: "",
     date: "",
     masonName: ""
@@ -178,6 +179,8 @@ document.addEventListener("DOMContentLoaded", () => {
           saveLogs(data.logs);
           renderFeed();
           updateProjectFilters();
+          populateTowerSuggestions();
+          populateMasonDatalistsAndPills();
         }
       }
     } catch (err) {
@@ -389,7 +392,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const flatValidationMessage = document.getElementById("flatValidationMessage");
   const inputDate = document.getElementById("inputDate");
   const inputMasonName = document.getElementById("inputMasonName");
+  const inputTower = document.getElementById("inputTower");
   const projectSuggestionsDatalist = document.getElementById("projectSuggestions");
+  const towerSuggestionsDatalist = document.getElementById("towerSuggestions");
   const btnLockFromScreen2 = document.getElementById("btnLockFromScreen2");
   const btnGoToDashboardFromScreen2 = document.getElementById("btnGoToDashboardFromScreen2");
 
@@ -398,6 +403,87 @@ document.addEventListener("DOMContentLoaded", () => {
     projectSuggestionsDatalist.innerHTML = PROJECT_SUGGESTIONS.map(
       (p) => `<option value="${p}"></option>`
     ).join("");
+  }
+
+  // Populate Tower datalist
+  function populateTowerSuggestions() {
+    const towerList = Array.isArray(TOWER_SUGGESTIONS) ? [...TOWER_SUGGESTIONS] : [];
+    const storedLogs = getStoredLogs();
+    storedLogs.forEach((l) => {
+      if (l.tower && l.tower.trim() && !towerList.includes(l.tower.trim())) {
+        towerList.push(l.tower.trim());
+      }
+    });
+    if (towerSuggestionsDatalist) {
+      towerSuggestionsDatalist.innerHTML = towerList.map(
+        (t) => `<option value="${escapeHtml(t)}"></option>`
+      ).join("");
+    }
+  }
+
+  // Get all unique known masons from defaults + logs
+  function getAllKnownMasons() {
+    const list = Array.isArray(DEFAULT_MASONS) ? [...DEFAULT_MASONS] : [];
+    const storedLogs = getStoredLogs();
+    storedLogs.forEach((l) => {
+      if (l.masonName && l.masonName.trim() && l.masonName !== "-" && !list.includes(l.masonName.trim())) {
+        list.push(l.masonName.trim());
+      }
+    });
+    return list;
+  }
+
+  // Populate mason datalist and quick-selection pills on Screen 2 and Screen 3
+  function populateMasonDatalistsAndPills() {
+    const masons = getAllKnownMasons();
+
+    // 1. Datalist
+    const datalist = document.getElementById("masonSuggestionsList");
+    if (datalist) {
+      datalist.innerHTML = masons.map(
+        (m) => `<option value="${escapeHtml(m)}"></option>`
+      ).join("");
+    }
+
+    // 2. Quick Pills Screen 2
+    const pillsS2 = document.getElementById("quickMasonPillsScreen2");
+    if (pillsS2) {
+      pillsS2.innerHTML = masons.slice(0, 10).map((m) => `
+        <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 rounded-pill mason-pill-s2" data-mason="${escapeHtml(m)}" style="font-size: 0.74rem;">
+          <i class="bi bi-person me-1"></i>${escapeHtml(m)}
+        </button>
+      `).join("");
+
+      pillsS2.querySelectorAll(".mason-pill-s2").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const m = btn.getAttribute("data-mason");
+          if (inputMasonName) inputMasonName.value = m;
+          const inputScreen3Mason = document.getElementById("inputScreen3Mason");
+          if (inputScreen3Mason) inputScreen3Mason.value = m;
+          currentContext.masonName = m;
+        });
+      });
+    }
+
+    // 3. Quick Pills Screen 3 (The new entry section)
+    const pillsS3 = document.getElementById("quickMasonPillsScreen3");
+    if (pillsS3) {
+      pillsS3.innerHTML = masons.slice(0, 10).map((m) => `
+        <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 rounded-pill mason-pill-s3" data-mason="${escapeHtml(m)}" style="font-size: 0.74rem;">
+          <i class="bi bi-person me-1"></i>${escapeHtml(m)}
+        </button>
+      `).join("");
+
+      pillsS3.querySelectorAll(".mason-pill-s3").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const m = btn.getAttribute("data-mason");
+          const inputScreen3Mason = document.getElementById("inputScreen3Mason");
+          if (inputScreen3Mason) inputScreen3Mason.value = m;
+          if (inputMasonName) inputMasonName.value = m;
+          currentContext.masonName = m;
+        });
+      });
+    }
   }
 
   // Default date to today (YYYY-MM-DD)
@@ -697,16 +783,24 @@ document.addEventListener("DOMContentLoaded", () => {
       const compositeLocation = `${floorLabel} • ${flatLabel}`;
 
       currentContext.projectName = inputProjectName.value.trim();
+      currentContext.tower = (inputTower && inputTower.value.trim()) || "";
       currentContext.floor = floorVal;
       currentContext.flatNo = flatVal;
       currentContext.floorFlat = compositeLocation;
       currentContext.date = inputDate.value;
       currentContext.masonName = inputMasonName.value.trim();
 
+      // Pre-fill Mason in Screen 3 (the new entry section)
+      const inputScreen3Mason = document.getElementById("inputScreen3Mason");
+      if (inputScreen3Mason) {
+        inputScreen3Mason.value = currentContext.masonName;
+      }
+
       // Update Screen 3 pill context
       const screen3ContextText = document.getElementById("screen3ContextText");
       if (screen3ContextText) {
-        screen3ContextText.textContent = `${currentContext.projectName} • ${currentContext.floorFlat}`;
+        const towerSuffix = currentContext.tower ? ` • ${currentContext.tower}` : "";
+        screen3ContextText.textContent = `${currentContext.projectName}${towerSuffix} • ${currentContext.floorFlat}`;
       }
 
       showScreen("s3");
@@ -719,6 +813,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const selectWorkCategory = document.getElementById("selectWorkCategory");
   const subTaskContainer = document.getElementById("subTaskContainer");
   const selectSubTask = document.getElementById("selectSubTask");
+  const inputScreen3Mason = document.getElementById("inputScreen3Mason");
   const notesContainer = document.getElementById("notesContainer");
   const textareaNotes = document.getElementById("textareaNotes");
   const notesRequiredIndicator = document.getElementById("notesRequiredIndicator");
@@ -860,12 +955,16 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
+      const taskMason = (inputScreen3Mason && inputScreen3Mason.value.trim()) || currentContext.masonName || "Unassigned";
+      currentContext.masonName = taskMason;
+
       const newLog = {
         id: "log_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7),
         projectName: currentContext.projectName,
+        tower: currentContext.tower || "",
         floorFlat: currentContext.floorFlat,
         date: currentContext.date,
-        masonName: currentContext.masonName,
+        masonName: taskMason,
         workCategory: category,
         subTask: subTaskVal,
         notes: notesVal,
@@ -875,13 +974,17 @@ document.addEventListener("DOMContentLoaded", () => {
       // Save locally & sync to MongoDB Atlas
       await apiSaveLog(newLog);
 
+      // Refresh dynamic mason and tower suggestions
+      populateMasonDatalistsAndPills();
+      populateTowerSuggestions();
+
       // Track latest logged entry for instant PDF/WhatsApp export
       latestLoggedEntry = newLog;
 
       // Show toast
       showToast("Work entry recorded successfully!", true);
 
-      // Reset Step 2 fields (keeping Step 1 context intact for quick batching)
+      // Reset Step 2 fields (keeping Step 1 context and mason intact for quick batching)
       selectWorkCategory.value = "";
       if (subTaskContainer) subTaskContainer.classList.add("d-none");
       if (selectSubTask) {
@@ -894,6 +997,9 @@ document.addEventListener("DOMContentLoaded", () => {
       if (notesRequiredIndicator) notesRequiredIndicator.classList.add("d-none");
       if (btnToggleNotes) {
         btnToggleNotes.innerHTML = `<i class="bi bi-pencil-square me-1"></i>+ Add Notes`;
+      }
+      if (inputScreen3Mason) {
+        inputScreen3Mason.value = taskMason;
       }
 
       // Show modal prompt
@@ -1073,147 +1179,177 @@ document.addEventListener("DOMContentLoaded", () => {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
-    // Draw the base letterhead frame on Page 1
-    drawMtsLetterheadFrame(doc);
+    // Group logs by Project & Tower so each Tower / Project is neatly separated by page
+    const groupedLogs = {};
+    logs.forEach((log) => {
+      let groupKey = "";
+      if (log.tower && log.tower.trim()) {
+        const t = log.tower.trim();
+        const p = (log.projectName || "").trim();
+        if (p && !p.toLowerCase().includes(t.toLowerCase())) {
+          groupKey = `${p} • ${t}`;
+        } else {
+          groupKey = p || t;
+        }
+      } else if (log.projectName && log.projectName.trim()) {
+        groupKey = log.projectName.trim();
+      } else {
+        groupKey = "General Site Work";
+      }
 
-    // Generation timestamp for footer
+      if (!groupedLogs[groupKey]) {
+        groupedLogs[groupKey] = [];
+      }
+      groupedLogs[groupKey].push(log);
+    });
+
+    const groupKeys = Object.keys(groupedLogs);
     const now = new Date();
     const dateFormatted = now.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
     const timeFormatted = now.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
 
-    // Metadata Info Card (Clean, perfectly aligned 2-column tabular layout)
-    let metaBody = [];
-    if (logs.length === 1) {
-      const log = logs[0];
-      metaBody = [
-        [
-          { content: "Project :", styles: { fontStyle: "bold", textColor: [27, 163, 171], cellWidth: 22 } },
-          { content: String(log.projectName || "-"), styles: { fontStyle: "bold", textColor: [20, 35, 45], cellWidth: 71 } },
-          { content: "Date :", styles: { fontStyle: "bold", textColor: [27, 163, 171], cellWidth: 20 } },
-          { content: String(log.date || "-"), styles: { fontStyle: "normal", textColor: [20, 35, 45], cellWidth: 73 } }
-        ],
-        [
-          { content: "Location :", styles: { fontStyle: "bold", textColor: [27, 163, 171], cellWidth: 22 } },
-          { content: String(log.floorFlat || "-"), styles: { fontStyle: "bold", textColor: [27, 163, 171], cellWidth: 71 } },
-          { content: "Mason :", styles: { fontStyle: "bold", textColor: [27, 163, 171], cellWidth: 20 } },
-          { content: String(log.masonName || "-"), styles: { fontStyle: "normal", textColor: [20, 35, 45], cellWidth: 73 } }
-        ]
-      ];
-    } else {
-      const projFilterVal = (filterProject && filterProject.value !== "ALL") ? filterProject.value : "All Active Projects";
-      const dateFilterVal = (filterDate && filterDate.value) ? filterDate.value : "All Dates";
-      metaBody = [
-        [
-          { content: "Report :", styles: { fontStyle: "bold", textColor: [27, 163, 171], cellWidth: 22 } },
-          { content: `${logs.length} Completed Task${logs.length > 1 ? "s" : ""}`, styles: { fontStyle: "bold", textColor: [20, 35, 45], cellWidth: 71 } },
-          { content: "Date Filter :", styles: { fontStyle: "bold", textColor: [27, 163, 171], cellWidth: 24 } },
-          { content: String(dateFilterVal), styles: { fontStyle: "normal", textColor: [20, 35, 45], cellWidth: 69 } }
-        ],
-        [
-          { content: "Project :", styles: { fontStyle: "bold", textColor: [27, 163, 171], cellWidth: 22 } },
-          { content: String(projFilterVal), styles: { fontStyle: "normal", textColor: [20, 35, 45], cellWidth: 71 } },
-          { content: "Generated :", styles: { fontStyle: "bold", textColor: [27, 163, 171], cellWidth: 24 } },
-          { content: `${dateFormatted} ${timeFormatted}`, styles: { fontStyle: "normal", textColor: [20, 35, 45], cellWidth: 69 } }
-        ]
-      ];
-    }
+    groupKeys.forEach((groupKey, groupIdx) => {
+      const groupLogs = groupedLogs[groupKey];
 
-    doc.autoTable({
-      body: metaBody,
-      startY: 33,
-      margin: { left: 10, right: 14 },
-      theme: "plain",
-      styles: {
-        fontSize: 8.5,
-        cellPadding: { top: 2.5, bottom: 2.5, left: 3, right: 3 },
-        overflow: "linebreak",
-        lineColor: [210, 230, 232],
-        lineWidth: 0.25
-      },
-      tableLineColor: [200, 225, 228],
-      tableLineWidth: 0.35,
-      alternateRowStyles: {
-        fillColor: [252, 254, 254]
-      },
-      bodyStyles: {
-        fillColor: [248, 251, 251]
+      // Each Tower / Project starts on its own dedicated page!
+      if (groupIdx > 0) {
+        doc.addPage();
       }
-    });
 
-    // Work Details Table
-    const tableHeaders = [["#", "Location / Flat", "Mason", "Work Category", "Specification", "Remarks / Notes"]];
-    const tableData = logs.map((log, index) => [
-      index + 1,
-      log.floorFlat || log.projectName || "-",
-      log.masonName || "-",
-      log.workCategory || "-",
-      log.subTask || "-",
-      log.notes || "-"
-    ]);
+      // Draw the official MTS Decor letterhead frame
+      drawMtsLetterheadFrame(doc);
 
-    const tableStartY = (doc.lastAutoTable && doc.lastAutoTable.finalY) ? doc.lastAutoTable.finalY + 4 : 52;
+      // Metadata Info Card specifically for this Tower / Project
+      let metaBody = [];
+      if (groupLogs.length === 1 && logs.length === 1) {
+        const log = groupLogs[0];
+        metaBody = [
+          [
+            { content: "Project / Tower :", styles: { fontStyle: "bold", textColor: [27, 163, 171], cellWidth: 28 } },
+            { content: String(groupKey), styles: { fontStyle: "bold", textColor: [20, 35, 45], cellWidth: 65 } },
+            { content: "Date :", styles: { fontStyle: "bold", textColor: [27, 163, 171], cellWidth: 20 } },
+            { content: String(log.date || "-"), styles: { fontStyle: "normal", textColor: [20, 35, 45], cellWidth: 73 } }
+          ],
+          [
+            { content: "Location :", styles: { fontStyle: "bold", textColor: [27, 163, 171], cellWidth: 28 } },
+            { content: String(log.floorFlat || "-"), styles: { fontStyle: "bold", textColor: [20, 35, 45], cellWidth: 65 } },
+            { content: "Mason :", styles: { fontStyle: "bold", textColor: [27, 163, 171], cellWidth: 20 } },
+            { content: String(log.masonName || "-"), styles: { fontStyle: "normal", textColor: [20, 35, 45], cellWidth: 73 } }
+          ]
+        ];
+      } else {
+        const dateFilterVal = (filterDate && filterDate.value) ? filterDate.value : "All Dates";
+        metaBody = [
+          [
+            { content: "Project / Tower :", styles: { fontStyle: "bold", textColor: [27, 163, 171], cellWidth: 28 } },
+            { content: String(groupKey), styles: { fontStyle: "bold", textColor: [20, 35, 45], cellWidth: 65 } },
+            { content: "Date :", styles: { fontStyle: "bold", textColor: [27, 163, 171], cellWidth: 20 } },
+            { content: String(dateFilterVal), styles: { fontStyle: "normal", textColor: [20, 35, 45], cellWidth: 73 } }
+          ],
+          [
+            { content: "Tower Summary :", styles: { fontStyle: "bold", textColor: [27, 163, 171], cellWidth: 28 } },
+            { content: `${groupLogs.length} Completed Task${groupLogs.length > 1 ? "s" : ""}`, styles: { fontStyle: "bold", textColor: [20, 35, 45], cellWidth: 65 } },
+            { content: "Generated :", styles: { fontStyle: "bold", textColor: [27, 163, 171], cellWidth: 20 } },
+            { content: `${dateFormatted} ${timeFormatted}`, styles: { fontStyle: "normal", textColor: [20, 35, 45], cellWidth: 73 } }
+          ]
+        ];
+      }
 
-    doc.autoTable({
-      head: tableHeaders,
-      body: tableData,
-      startY: tableStartY,
-      margin: { left: 10, right: 14 },
-      theme: "grid",
-      headStyles: {
-        fillColor: [27, 163, 171], // Official MTS Decor letterhead teal
-        textColor: [255, 255, 255],
-        fontStyle: "bold",
-        fontSize: 8.5
-      },
-      styles: {
-        fontSize: 8,
-        cellPadding: 2.8,
-        textColor: [20, 35, 45],
-        lineColor: [220, 235, 237],
-        lineWidth: 0.2,
-        overflow: "linebreak"
-      },
-      columnStyles: {
-        0: { cellWidth: 8, halign: "center" },
-        1: { cellWidth: 36 },
-        2: { cellWidth: 28 },
-        3: { cellWidth: 32 },
-        4: { cellWidth: 36 },
-        5: { cellWidth: 48 }
-      },
-      alternateRowStyles: {
-        fillColor: [248, 252, 252]
-      },
-      didDrawPage: function(data) {
-        // Redraw letterhead on any new page auto-created by AutoTable
-        if (data.pageNumber > 1) {
+      doc.autoTable({
+        body: metaBody,
+        startY: 33,
+        margin: { left: 10, right: 14 },
+        theme: "plain",
+        styles: {
+          fontSize: 8.5,
+          cellPadding: { top: 2.5, bottom: 2.5, left: 3, right: 3 },
+          overflow: "linebreak",
+          lineColor: [210, 230, 232],
+          lineWidth: 0.25
+        },
+        tableLineColor: [200, 225, 228],
+        tableLineWidth: 0.35,
+        alternateRowStyles: {
+          fillColor: [252, 254, 254]
+        },
+        bodyStyles: {
+          fillColor: [248, 251, 251]
+        }
+      });
+
+      // Work Details Table for this Tower
+      const tableHeaders = [["#", "Location / Flat", "Mason", "Work Category", "Specification", "Remarks / Notes"]];
+      const tableData = groupLogs.map((log, index) => [
+        index + 1,
+        log.floorFlat || log.projectName || "-",
+        log.masonName || "-",
+        log.workCategory || "-",
+        log.subTask || "-",
+        log.notes || "-"
+      ]);
+
+      const tableStartY = (doc.lastAutoTable && doc.lastAutoTable.finalY) ? doc.lastAutoTable.finalY + 4 : 52;
+
+      doc.autoTable({
+        head: tableHeaders,
+        body: tableData,
+        startY: tableStartY,
+        margin: { left: 10, right: 14 },
+        theme: "grid",
+        headStyles: {
+          fillColor: [27, 163, 171], // Official MTS Decor letterhead teal
+          textColor: [255, 255, 255],
+          fontStyle: "bold",
+          fontSize: 8.5
+        },
+        styles: {
+          fontSize: 8,
+          cellPadding: 2.8,
+          textColor: [20, 35, 45],
+          lineColor: [220, 235, 237],
+          lineWidth: 0.2,
+          overflow: "linebreak"
+        },
+        columnStyles: {
+          0: { cellWidth: 8, halign: "center" },
+          1: { cellWidth: 36 },
+          2: { cellWidth: 28 },
+          3: { cellWidth: 32 },
+          4: { cellWidth: 36 },
+          5: { cellWidth: 48 }
+        },
+        alternateRowStyles: {
+          fillColor: [248, 252, 252]
+        },
+        didDrawPage: function() {
+          // Draw letterhead on any new page auto-created by AutoTable
           drawMtsLetterheadFrame(doc);
         }
+      });
+
+      // Signatures block for this Tower / Project
+      let finalY = (doc.lastAutoTable && doc.lastAutoTable.finalY) ? doc.lastAutoTable.finalY + 16 : 180;
+      if (finalY > 255) {
+        doc.addPage();
+        drawMtsLetterheadFrame(doc);
+        finalY = 45;
       }
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(85, 105, 115);
+
+      doc.setDrawColor(180, 205, 210);
+      doc.setLineWidth(0.4);
+
+      doc.line(18, finalY, 75, finalY);
+      doc.text("Site Supervisor Signature", 18, finalY + 4.5);
+
+      doc.line(135, finalY, 192, finalY);
+      doc.text("Contractor / Client Signature", 135, finalY + 4.5);
     });
 
-    // Signatures block
-    let finalY = (doc.lastAutoTable && doc.lastAutoTable.finalY) ? doc.lastAutoTable.finalY + 16 : 180;
-    if (finalY > 255) {
-      doc.addPage();
-      drawMtsLetterheadFrame(doc);
-      finalY = 45;
-    }
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(85, 105, 115);
-
-    doc.setDrawColor(180, 205, 210);
-    doc.setLineWidth(0.4);
-
-    doc.line(18, finalY, 75, finalY);
-    doc.text("Site Supervisor Signature", 18, finalY + 4.5);
-
-    doc.line(135, finalY, 192, finalY);
-    doc.text("Contractor / Client Signature", 135, finalY + 4.5);
-
-    // Page Numbering Footer on all pages
+    // Page Numbering Footer across the entire document
     const pageCount = doc.internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
@@ -1693,7 +1829,7 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
 
           <div class="mb-2">
-            <h6 class="fw-bold mb-1 text-dark">${escapeHtml(log.projectName)} &bull; <span class="text-primary">${escapeHtml(log.floorFlat)}</span></h6>
+            <h6 class="fw-bold mb-1 text-dark">${escapeHtml(log.projectName)}${log.tower ? ` &bull; <span class="badge bg-primary-subtle text-primary border">${escapeHtml(log.tower)}</span>` : ""} &bull; <span class="text-primary">${escapeHtml(log.floorFlat)}</span></h6>
           </div>
 
           <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
@@ -1791,6 +1927,7 @@ document.addEventListener("DOMContentLoaded", () => {
         "Entry ID",
         "Date",
         "Project Name",
+        "Tower / Wing",
         "Floor / Flat",
         "Mason Name",
         "Work Category",
@@ -1806,6 +1943,7 @@ document.addEventListener("DOMContentLoaded", () => {
           csvEscape(item.id),
           csvEscape(item.date),
           csvEscape(item.projectName),
+          csvEscape(item.tower || ""),
           csvEscape(item.floorFlat),
           csvEscape(item.masonName),
           csvEscape(item.workCategory),
@@ -1882,6 +2020,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Initialize
   showScreen("s1");
+  populateTowerSuggestions();
+  populateMasonDatalistsAndPills();
   checkAtlasConnection().then(() => {
     fetchCloudLogs();
   });

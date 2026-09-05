@@ -97,18 +97,32 @@
 
       <!-- Setup Form -->
       <form id="formProjectSetup" class="d-flex flex-column gap-3">
-        <!-- 1. Project Name with Datalist -->
-        <div>
-          <label for="inputProjectName" class="form-label fw-semibold small text-secondary mb-1">
-            Project Name <span class="text-danger">*</span>
-          </label>
-          <div class="input-group">
-            <span class="input-group-text bg-light text-secondary"><i class="bi bi-buildings"></i></span>
-            <input type="text" class="form-control" id="inputProjectName" list="projectSuggestions" placeholder="e.g. Sunrise Heights" required autocomplete="off">
+        <!-- 1. Project & Tower / Wing -->
+        <div class="row g-2">
+          <div class="col-7">
+            <label for="inputProjectName" class="form-label fw-semibold small text-secondary mb-1">
+              Project Name <span class="text-danger">*</span>
+            </label>
+            <div class="input-group">
+              <span class="input-group-text bg-light text-secondary px-2"><i class="bi bi-buildings"></i></span>
+              <input type="text" class="form-control" id="inputProjectName" list="projectSuggestions" placeholder="e.g. ONE UTTAM" required autocomplete="off">
+            </div>
+            <datalist id="projectSuggestions">
+              <!-- Dynamically populated from constants -->
+            </datalist>
           </div>
-          <datalist id="projectSuggestions">
-            <!-- Dynamically populated from constants -->
-          </datalist>
+          <div class="col-5">
+            <label for="inputTower" class="form-label fw-semibold small text-secondary mb-1">
+              Tower / Wing <span class="text-muted fw-normal" style="font-size: 0.72rem;">(Optional)</span>
+            </label>
+            <div class="input-group">
+              <span class="input-group-text bg-light text-secondary px-2"><i class="bi bi-building"></i></span>
+              <input type="text" class="form-control" id="inputTower" list="towerSuggestions" placeholder="e.g. Tower A" autocomplete="off">
+            </div>
+            <datalist id="towerSuggestions">
+              <!-- Dynamically populated from constants -->
+            </datalist>
+          </div>
         </div>
 
         <!-- 2. Floor & Flat No. (Precise cascading selection & validation) -->
@@ -196,7 +210,18 @@
           </label>
           <div class="input-group">
             <span class="input-group-text bg-light text-secondary"><i class="bi bi-person-badge"></i></span>
-            <input type="text" class="form-control" id="inputMasonName" placeholder="e.g. Ramesh Kumar" required autocomplete="off">
+            <input type="text" class="form-control" id="inputMasonName" list="masonSuggestionsList" placeholder="e.g. Sampat, Imran..." required autocomplete="off">
+          </div>
+          <datalist id="masonSuggestionsList">
+            <!-- Dynamically populated from database masons -->
+          </datalist>
+          <div class="mt-2">
+            <div class="d-flex align-items-center justify-content-between mb-1">
+              <span class="small text-muted" style="font-size: 0.76rem;">Quick Select Mason:</span>
+            </div>
+            <div class="d-flex flex-wrap gap-1" id="quickMasonPillsScreen2">
+              <!-- Dynamically rendered pills -->
+            </div>
           </div>
         </div>
 
@@ -265,6 +290,24 @@
           </div>
         </div>
 
+        <!-- 3. Mason / Labour for this Work Entry -->
+        <div>
+          <label for="inputScreen3Mason" class="form-label fw-semibold small text-secondary mb-1">
+            Mason / Labour Name <span class="text-danger">*</span>
+          </label>
+          <div class="input-group">
+            <span class="input-group-text bg-light text-secondary"><i class="bi bi-person-badge"></i></span>
+            <input type="text" class="form-control" id="inputScreen3Mason" list="masonSuggestionsList" placeholder="Assign mason for this work..." required autocomplete="off">
+          </div>
+          <div class="mt-2">
+            <div class="d-flex align-items-center justify-content-between mb-1">
+              <span class="small text-muted" style="font-size: 0.76rem;">Quick Select Mason:</span>
+            </div>
+            <div class="d-flex flex-wrap gap-1" id="quickMasonPillsScreen3">
+              <!-- Dynamically rendered pills -->
+            </div>
+          </div>
+        </div>
 
         <!-- 4. Remarks / Custom Notes (Auto-unhides for "Other" or via toggle) -->
         <div class="mt-1">
@@ -595,9 +638,9 @@
   <!-- PDF.js for universal mobile & desktop canvas PDF rendering -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <!-- Constants, Logo & Data Logic -->
-  <script src="js/logo.js?v=12"></script>
-  <script src="js/constants.js?v=12"></script>
+  <script src="js/logo.js?v=13"></script>
+  <script src="js/constants.js?v=13"></script>
   <!-- Main Application Logic -->
-  <script src="js/app.js?v=12"></script>
+  <script src="js/app.js?v=13"></script>
 </body>
 </html>

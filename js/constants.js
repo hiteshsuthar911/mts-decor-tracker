@@ -83,6 +83,7 @@ const UNITS = [
 ];
 
 const PROJECT_SUGGESTIONS = [
+  "ONE UTTAM",
   "Sunrise Heights",
   "Skyline Towers",
   "Palm Residency",
@@ -91,9 +92,35 @@ const PROJECT_SUGGESTIONS = [
   "Prestige Lakefront"
 ];
 
+const TOWER_SUGGESTIONS = [
+  "Tower A",
+  "Tower B",
+  "Tower C",
+  "Wing A",
+  "Wing B",
+  "A1",
+  "B1"
+];
+
+const DEFAULT_MASONS = [
+  "Sampat",
+  "Narayan ji",
+  "Imran",
+  "Bablu",
+  "Sarvesh",
+  "Rajesh",
+  "Shiku",
+  "Sharafat",
+  "Vivek",
+  "Gulam",
+  "Hiralal",
+  "Suresh"
+];
+
 const SECURITY_PINS = {
   SITE_ENTRY: "1234",
   ADMIN_DASHBOARD: "9999"
 };
 
 const STORAGE_KEY = "mts_decor_work_logs";
+
