@@ -602,10 +602,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (inputNewMasonName) {
       inputNewMasonName.value = prefill;
     }
-    if (addMasonModal) {
-      addMasonModal.show();
-    } else if (addMasonModalEl && window.bootstrap && window.bootstrap.Modal) {
-      const modal = new bootstrap.Modal(addMasonModalEl);
+    const modal = (window.bootstrap && window.bootstrap.Modal && addMasonModalEl)
+      ? bootstrap.Modal.getOrCreateInstance(addMasonModalEl)
+      : addMasonModal;
+    if (modal) {
       modal.show();
     }
     setTimeout(() => {
@@ -641,11 +641,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
       populateMasonDatalistsAndPills(saved);
 
-      if (addMasonModal) {
-        addMasonModal.hide();
-      } else if (addMasonModalEl && window.bootstrap && window.bootstrap.Modal) {
-        const bsModal = bootstrap.Modal.getInstance(addMasonModalEl);
-        if (bsModal) bsModal.hide();
+      const modal = (window.bootstrap && window.bootstrap.Modal && addMasonModalEl)
+        ? bootstrap.Modal.getOrCreateInstance(addMasonModalEl)
+        : addMasonModal;
+      if (modal) {
+        modal.hide();
       }
 
       showToast(`Mason "${saved}" added and selected!`, true);
