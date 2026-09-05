@@ -30,6 +30,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let latestLoggedEntry = null;
   let currentPdfDoc = null;
+  let currentPdfDocParsed = null;
+  let pdfZoomLevelPct = 100;
+  let pdfFitMode = "width";
   let currentPdfFilename = "MTS_Decor_Report.pdf";
   let currentPdfLogs = [];
 
@@ -1227,6 +1230,97 @@ document.addEventListener("DOMContentLoaded", () => {
     return doc;
   }
 
+  async function renderPdfPagesFromParsed() {
+    if (!currentPdfDocParsed) return;
+    const container = document.getElementById("pdfCanvasContainer");
+    const spinner = document.getElementById("pdfLoadingSpinner");
+    const iframe = document.getElementById("pdfPreviewIframe");
+    const modalBody = document.getElementById("pdfModalBody");
+
+    if (!container) return;
+    container.innerHTML = "";
+    if (spinner) spinner.classList.remove("d-none");
+    if (iframe) iframe.classList.add("d-none");
+
+    const pdf = currentPdfDocParsed;
+
+    try {
+      // Container dimensions
+      const bodyWidth = (modalBody && modalBody.clientWidth > 0) ? modalBody.clientWidth : (window.innerWidth < 768 ? window.innerWidth - 24 : 850);
+      const bodyHeight = (modalBody && modalBody.clientHeight > 0) ? modalBody.clientHeight : (window.innerHeight * 0.7);
+
+      const page1 = await pdf.getPage(1);
+      const unscaledVp = page1.getViewport({ scale: 1.0 });
+
+      let targetWidth;
+      if (pdfFitMode === "width") {
+        // Fit container width comfortably
+        const padding = window.innerWidth < 768 ? 16 : 40;
+        targetWidth = Math.max(280, bodyWidth - padding);
+        pdfZoomLevelPct = Math.round((targetWidth / unscaledVp.width) * 100);
+      } else if (pdfFitMode === "page") {
+        // Fit entire page vertically in the modal viewport
+        const availHeight = Math.max(300, bodyHeight - 40);
+        targetWidth = Math.floor(availHeight * (unscaledVp.width / unscaledVp.height));
+        pdfZoomLevelPct = Math.round((targetWidth / unscaledVp.width) * 100);
+      } else {
+        // Custom zoom level
+        targetWidth = Math.floor(unscaledVp.width * (pdfZoomLevelPct / 100));
+      }
+
+      // Update zoom percentage badge
+      const zoomLevelEl = document.getElementById("pdfZoomLevel");
+      if (zoomLevelEl) {
+        zoomLevelEl.textContent = `${pdfZoomLevelPct}%`;
+      }
+
+      if (spinner) spinner.classList.add("d-none");
+
+      // Render each page
+      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        const page = (pageNum === 1) ? page1 : await pdf.getPage(pageNum);
+        const pageVp = page.getViewport({ scale: 1.0 });
+
+        const cssWidth = Math.floor(targetWidth);
+        const cssHeight = Math.floor(targetWidth * (pageVp.height / pageVp.width));
+
+        // Crisp Retina Rendering
+        const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+        const renderScale = (targetWidth / pageVp.width) * dpr;
+        const renderViewport = page.getViewport({ scale: renderScale });
+
+        const canvas = document.createElement("canvas");
+        canvas.className = "shadow-lg rounded bg-white my-2";
+        canvas.style.width = `${cssWidth}px`;
+        canvas.style.height = `${cssHeight}px`;
+        canvas.style.maxWidth = "none";
+        canvas.style.display = "block";
+        canvas.style.margin = "0 auto";
+        canvas.width = Math.floor(renderViewport.width);
+        canvas.height = Math.floor(renderViewport.height);
+
+        const ctx = canvas.getContext("2d");
+        await page.render({ canvasContext: ctx, viewport: renderViewport }).promise;
+
+        if (pdf.numPages > 1) {
+          const wrap = document.createElement("div");
+          wrap.className = "d-flex flex-column align-items-center mb-3 w-100";
+          wrap.appendChild(canvas);
+          const badge = document.createElement("span");
+          badge.className = "badge bg-dark bg-opacity-75 text-white small mt-1";
+          badge.textContent = `Page ${pageNum} of ${pdf.numPages}`;
+          wrap.appendChild(badge);
+          container.appendChild(wrap);
+        } else {
+          container.appendChild(canvas);
+        }
+      }
+    } catch (err) {
+      console.error("PDF render error:", err);
+      if (spinner) spinner.classList.add("d-none");
+    }
+  }
+
   async function renderPdfPagesToCanvas(pdfDoc) {
     const container = document.getElementById("pdfCanvasContainer");
     const spinner = document.getElementById("pdfLoadingSpinner");
@@ -1250,46 +1344,8 @@ document.addEventListener("DOMContentLoaded", () => {
       window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
       const pdfArrayBuffer = pdfDoc.output("arraybuffer");
       const loadingTask = window.pdfjsLib.getDocument({ data: pdfArrayBuffer });
-      const pdf = await loadingTask.promise;
-
-      if (spinner) spinner.classList.add("d-none");
-
-      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-        const page = await pdf.getPage(pageNum);
-        const modalBody = document.getElementById("pdfModalBody");
-        const bodyWidth = modalBody ? modalBody.clientWidth : window.innerWidth;
-        const availableWidth = Math.max(280, bodyWidth - 32);
-
-        const unscaledViewport = page.getViewport({ scale: 1 });
-        const cssScale = Math.min(1.4, availableWidth / unscaledViewport.width);
-        const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
-        const renderViewport = page.getViewport({ scale: cssScale * dpr });
-
-        const canvas = document.createElement("canvas");
-        canvas.className = "shadow rounded bg-white my-2";
-        canvas.style.width = `${Math.floor(unscaledViewport.width * cssScale)}px`;
-        canvas.style.height = `${Math.floor(unscaledViewport.height * cssScale)}px`;
-        canvas.style.maxWidth = "100%";
-        canvas.style.display = "block";
-        canvas.width = Math.floor(renderViewport.width);
-        canvas.height = Math.floor(renderViewport.height);
-
-        const ctx = canvas.getContext("2d");
-        await page.render({ canvasContext: ctx, viewport: renderViewport }).promise;
-
-        if (pdf.numPages > 1) {
-          const wrap = document.createElement("div");
-          wrap.className = "d-flex flex-column align-items-center mb-3 w-100";
-          wrap.appendChild(canvas);
-          const badge = document.createElement("span");
-          badge.className = "badge bg-dark bg-opacity-75 text-white small mt-1";
-          badge.textContent = `Page ${pageNum} of ${pdf.numPages}`;
-          wrap.appendChild(badge);
-          container.appendChild(wrap);
-        } else {
-          container.appendChild(canvas);
-        }
-      }
+      currentPdfDocParsed = await loadingTask.promise;
+      await renderPdfPagesFromParsed();
     } catch (err) {
       console.error("PDF.js render error:", err);
       if (spinner) spinner.classList.add("d-none");
@@ -1310,6 +1366,8 @@ document.addEventListener("DOMContentLoaded", () => {
     currentPdfDoc = generatePdf(logs, title);
     if (!currentPdfDoc) return;
 
+    pdfFitMode = "width"; // Default to fit width for optimal readability
+
     if (lastBlobUrl) {
       URL.revokeObjectURL(lastBlobUrl);
     }
@@ -1321,7 +1379,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (pdfPreviewModal) pdfPreviewModal.show();
 
-    // Render directly to HTML5 canvas so mobile browsers (Android & iOS) display the document
+    // Render directly to HTML5 canvas so mobile & desktop display the document cleanly
     renderPdfPagesToCanvas(currentPdfDoc);
   }
 
@@ -1435,6 +1493,68 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
+
+  // --- PDF Viewer Interactive Zoom & Fit Controls ---
+  const btnPdfZoomIn = document.getElementById("btnPdfZoomIn");
+  const btnPdfZoomOut = document.getElementById("btnPdfZoomOut");
+  const btnPdfZoomReset = document.getElementById("btnPdfZoomReset");
+  const btnPdfFitWidth = document.getElementById("btnPdfFitWidth");
+  const btnPdfFitPage = document.getElementById("btnPdfFitPage");
+
+  if (btnPdfZoomIn) {
+    btnPdfZoomIn.addEventListener("click", () => {
+      pdfFitMode = "custom";
+      pdfZoomLevelPct = Math.min(pdfZoomLevelPct + 20, 260);
+      renderPdfPagesFromParsed();
+    });
+  }
+
+  if (btnPdfZoomOut) {
+    btnPdfZoomOut.addEventListener("click", () => {
+      pdfFitMode = "custom";
+      pdfZoomLevelPct = Math.max(pdfZoomLevelPct - 20, 40);
+      renderPdfPagesFromParsed();
+    });
+  }
+
+  if (btnPdfZoomReset) {
+    btnPdfZoomReset.addEventListener("click", () => {
+      pdfFitMode = "custom";
+      pdfZoomLevelPct = 100;
+      renderPdfPagesFromParsed();
+    });
+  }
+
+  if (btnPdfFitWidth) {
+    btnPdfFitWidth.addEventListener("click", () => {
+      pdfFitMode = "width";
+      renderPdfPagesFromParsed();
+    });
+  }
+
+  if (btnPdfFitPage) {
+    btnPdfFitPage.addEventListener("click", () => {
+      pdfFitMode = "page";
+      renderPdfPagesFromParsed();
+    });
+  }
+
+  if (pdfPreviewModalEl) {
+    pdfPreviewModalEl.addEventListener("shown.bs.modal", () => {
+      // Re-calculate with exact finished modal width
+      if (currentPdfDocParsed && pdfFitMode === "width") {
+        renderPdfPagesFromParsed();
+      }
+    });
+  }
+
+  window.addEventListener("resize", () => {
+    if (pdfPreviewModalEl && pdfPreviewModalEl.classList.contains("show") && currentPdfDocParsed) {
+      if (pdfFitMode === "width" || pdfFitMode === "page") {
+        renderPdfPagesFromParsed();
+      }
+    }
+  });
 
   if (btnDownloadDailyPdf) {
     btnDownloadDailyPdf.addEventListener("click", () => {

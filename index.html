@@ -422,8 +422,8 @@
 
     <!-- PDF Preview Web App Modal -->
     <div class="modal fade" id="pdfPreviewModal" tabindex="-1" aria-labelledby="pdfModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered modal-lg px-2">
-        <div class="modal-content">
+      <div class="modal-dialog modal-dialog-centered modal-xl modal-fullscreen-sm-down px-2">
+        <div class="modal-content shadow-lg">
           <div class="modal-header py-2 px-3 bg-light border-bottom d-flex align-items-center justify-content-between">
             <div class="d-flex align-items-center gap-2">
               <i class="bi bi-file-earmark-pdf-fill text-danger fs-5"></i>
@@ -431,7 +431,36 @@
             </div>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
-          <div class="modal-body p-2 d-flex flex-column align-items-center overflow-auto" id="pdfModalBody" style="height: 72vh; min-height: 420px; background-color: #525659; -webkit-overflow-scrolling: touch;">
+
+          <!-- Interactive PDF Reader Toolbar (Zoom In/Out, Fit Width, Fit Page) -->
+          <div class="bg-dark text-white px-3 py-2 d-flex align-items-center justify-content-between flex-wrap gap-2" style="background-color: #323639 !important; font-size: 0.85rem;">
+            <!-- Zoom Controls -->
+            <div class="d-flex align-items-center gap-1 bg-secondary bg-opacity-25 rounded px-1 py-1">
+              <button type="button" class="btn btn-sm btn-dark text-white py-0 px-2 border-0" id="btnPdfZoomOut" title="Zoom Out (Ctrl -)">
+                <i class="bi bi-dash-lg"></i>
+              </button>
+              <button type="button" class="btn btn-sm btn-dark text-white py-0 px-2 fw-semibold border-0" id="btnPdfZoomReset" title="Reset Zoom to 100%">
+                <span id="pdfZoomLevel">100%</span>
+              </button>
+              <button type="button" class="btn btn-sm btn-dark text-white py-0 px-2 border-0" id="btnPdfZoomIn" title="Zoom In (Ctrl +)">
+                <i class="bi bi-plus-lg"></i>
+              </button>
+            </div>
+
+            <!-- Fit & Layout Controls -->
+            <div class="d-flex align-items-center gap-2">
+              <button type="button" class="btn btn-sm btn-outline-light py-1 px-2 border-secondary d-flex align-items-center gap-1" id="btnPdfFitWidth" title="Fit to Screen Width">
+                <i class="bi bi-arrows-expand"></i>
+                <span class="d-none d-sm-inline">Fit Width</span>
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-light py-1 px-2 border-secondary d-flex align-items-center gap-1" id="btnPdfFitPage" title="Fit Full Page">
+                <i class="bi bi-aspect-ratio"></i>
+                <span class="d-none d-sm-inline">Fit Page</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="modal-body p-3 d-flex flex-column align-items-center overflow-auto" id="pdfModalBody" style="height: 75vh; min-height: 480px; background-color: #525659; -webkit-overflow-scrolling: touch;">
             <!-- Loading indicator -->
             <div id="pdfLoadingSpinner" class="d-flex flex-column align-items-center justify-content-center text-white my-auto py-5">
               <div class="spinner-border text-light mb-2" role="status"></div>
@@ -566,9 +595,9 @@
   <!-- PDF.js for universal mobile & desktop canvas PDF rendering -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <!-- Constants, Logo & Data Logic -->
-  <script src="js/logo.js?v=11"></script>
-  <script src="js/constants.js?v=11"></script>
+  <script src="js/logo.js?v=12"></script>
+  <script src="js/constants.js?v=12"></script>
   <!-- Main Application Logic -->
-  <script src="js/app.js?v=11"></script>
+  <script src="js/app.js?v=12"></script>
 </body>
 </html>
