@@ -61,6 +61,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const target = screens[screenKey];
     if (target) {
       target.style.display = (screenKey === "s1" || screenKey === "s2" || screenKey === "s3") ? "flex" : "flex";
+      if (screenKey === "s2" || screenKey === "s3") {
+        try {
+          if (typeof populateMasonDatalistsAndPills === "function") {
+            populateMasonDatalistsAndPills();
+          }
+        } catch (e) {
+          console.error("Error refreshing masons on screen switch", e);
+        }
+      }
       // Slight timeout for CSS animation
       setTimeout(() => {
         target.classList.add("active");

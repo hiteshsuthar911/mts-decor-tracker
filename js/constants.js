@@ -159,3 +159,14 @@ const SECURITY_PINS = {
 
 const STORAGE_KEY = "mts_decor_work_logs";
 
+if (typeof window !== "undefined") {
+  window.WORK_LOGIC_MATRIX = WORK_LOGIC_MATRIX;
+  window.UNITS = UNITS;
+  window.PROJECT_SUGGESTIONS = PROJECT_SUGGESTIONS;
+  window.TOWER_SUGGESTIONS = TOWER_SUGGESTIONS;
+  window.DEFAULT_MASONS = DEFAULT_MASONS;
+  window.SECURITY_PINS = SECURITY_PINS;
+  window.STORAGE_KEY = STORAGE_KEY;
+}
+
+
