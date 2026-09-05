@@ -57,6 +57,14 @@ async function connectToMongo() {
   }
 }
 
+// Auto-reconnect every 20 seconds if disconnected
+setInterval(async () => {
+  if (!dbConnected && MONGODB_URI) {
+    console.log('🔄 [MongoDB Atlas] Retrying connection...');
+    await connectToMongo();
+  }
+}, 20000);
+
 // ---------------------------------------------------------
 // REST API ENDPOINTS
 // ---------------------------------------------------------
