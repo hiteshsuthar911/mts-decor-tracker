@@ -1227,6 +1227,79 @@ document.addEventListener("DOMContentLoaded", () => {
     return doc;
   }
 
+  async function renderPdfPagesToCanvas(pdfDoc) {
+    const container = document.getElementById("pdfCanvasContainer");
+    const spinner = document.getElementById("pdfLoadingSpinner");
+    const iframe = document.getElementById("pdfPreviewIframe");
+
+    if (!container) return;
+    container.innerHTML = "";
+    if (spinner) spinner.classList.remove("d-none");
+    if (iframe) iframe.classList.add("d-none");
+
+    if (!window.pdfjsLib) {
+      if (spinner) spinner.classList.add("d-none");
+      if (iframe && lastBlobUrl) {
+        iframe.classList.remove("d-none");
+        iframe.src = lastBlobUrl;
+      }
+      return;
+    }
+
+    try {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+      const pdfArrayBuffer = pdfDoc.output("arraybuffer");
+      const loadingTask = window.pdfjsLib.getDocument({ data: pdfArrayBuffer });
+      const pdf = await loadingTask.promise;
+
+      if (spinner) spinner.classList.add("d-none");
+
+      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        const page = await pdf.getPage(pageNum);
+        const modalBody = document.getElementById("pdfModalBody");
+        const bodyWidth = modalBody ? modalBody.clientWidth : window.innerWidth;
+        const availableWidth = Math.max(280, bodyWidth - 32);
+
+        const unscaledViewport = page.getViewport({ scale: 1 });
+        const cssScale = Math.min(1.4, availableWidth / unscaledViewport.width);
+        const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+        const renderViewport = page.getViewport({ scale: cssScale * dpr });
+
+        const canvas = document.createElement("canvas");
+        canvas.className = "shadow rounded bg-white my-2";
+        canvas.style.width = `${Math.floor(unscaledViewport.width * cssScale)}px`;
+        canvas.style.height = `${Math.floor(unscaledViewport.height * cssScale)}px`;
+        canvas.style.maxWidth = "100%";
+        canvas.style.display = "block";
+        canvas.width = Math.floor(renderViewport.width);
+        canvas.height = Math.floor(renderViewport.height);
+
+        const ctx = canvas.getContext("2d");
+        await page.render({ canvasContext: ctx, viewport: renderViewport }).promise;
+
+        if (pdf.numPages > 1) {
+          const wrap = document.createElement("div");
+          wrap.className = "d-flex flex-column align-items-center mb-3 w-100";
+          wrap.appendChild(canvas);
+          const badge = document.createElement("span");
+          badge.className = "badge bg-dark bg-opacity-75 text-white small mt-1";
+          badge.textContent = `Page ${pageNum} of ${pdf.numPages}`;
+          wrap.appendChild(badge);
+          container.appendChild(wrap);
+        } else {
+          container.appendChild(canvas);
+        }
+      }
+    } catch (err) {
+      console.error("PDF.js render error:", err);
+      if (spinner) spinner.classList.add("d-none");
+      if (iframe && lastBlobUrl) {
+        iframe.classList.remove("d-none");
+        iframe.src = lastBlobUrl;
+      }
+    }
+  }
+
   function openPdfPreview(logs, title, filename) {
     if (!logs || logs.length === 0) {
       showToast("No work entries to view", false);
@@ -1243,13 +1316,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const pdfBlob = currentPdfDoc.output("blob");
     lastBlobUrl = URL.createObjectURL(pdfBlob);
 
-    const iframe = document.getElementById("pdfPreviewIframe");
-    if (iframe) iframe.src = lastBlobUrl;
-
     const titleEl = document.getElementById("pdfModalLabel");
     if (titleEl) titleEl.textContent = title;
 
     if (pdfPreviewModal) pdfPreviewModal.show();
+
+    // Render directly to HTML5 canvas so mobile browsers (Android & iOS) display the document
+    renderPdfPagesToCanvas(currentPdfDoc);
   }
 
   function downloadPdf(logs, title, filename) {
