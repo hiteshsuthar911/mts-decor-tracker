@@ -192,7 +192,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (data.success && Array.isArray(data.logs)) {
           saveLogs(data.logs);
           renderFeed();
-          updateProjectFilters();
+          populateProjectFilter();
           populateTowerSuggestions();
           populateMasonDatalistsAndPills();
         }
@@ -209,14 +209,19 @@ document.addEventListener("DOMContentLoaded", () => {
     filtered.unshift(newLog);
     saveLogs(filtered);
 
+    const payload = { ...newLog };
+    delete payload._id;
+
     if (isAtlasConnected) {
       try {
         const res = await fetch("/api/logs", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(newLog)
+          body: JSON.stringify(payload)
         });
-        if (res.ok) {
+        if (!res.ok) {
+          console.warn("Atlas write rejected, using local cache");
+        } else {
           console.log("Log synced to MongoDB Atlas:", newLog.id);
         }
       } catch (err) {
@@ -237,18 +242,21 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     saveLogs(logs);
 
+    const payload = { ...updatedLog };
+    delete payload._id;
+
     if (isAtlasConnected) {
       try {
         const res = await fetch(`/api/logs/${encodeURIComponent(updatedLog.id)}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(updatedLog)
+          body: JSON.stringify(payload)
         });
         if (!res.ok) {
           await fetch("/api/logs", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(updatedLog)
+            body: JSON.stringify(payload)
           });
         }
       } catch (err) {

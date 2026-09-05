@@ -138,8 +138,11 @@ app.post('/api/logs', async (req, res) => {
     }
 
     const nowIso = new Date().toISOString();
+    const cleanEntry = { ...entry };
+    delete cleanEntry._id;
+
     const docToInsert = {
-      ...entry,
+      ...cleanEntry,
       id: entry.id || `log_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
       createdAt: entry.createdAt || nowIso,
       updatedAt: nowIso
@@ -179,8 +182,11 @@ app.put('/api/logs/:id', async (req, res) => {
     }
 
     const nowIso = new Date().toISOString();
+    const cleanUpdates = { ...updates };
+    delete cleanUpdates._id;
+
     const docToUpdate = {
-      ...updates,
+      ...cleanUpdates,
       id,
       updatedAt: nowIso
     };
@@ -218,21 +224,25 @@ app.post('/api/sync', async (req, res) => {
       return res.json({ success: true, syncedCount: 0 });
     }
 
-    const operations = logs.map((item) => ({
-      updateOne: {
-        filter: { id: item.id },
-        update: {
-          $set: {
-            ...item,
-            updatedAt: new Date().toISOString()
+    const operations = logs.map((item) => {
+      const cleanItem = { ...item };
+      delete cleanItem._id;
+      return {
+        updateOne: {
+          filter: { id: item.id },
+          update: {
+            $set: {
+              ...cleanItem,
+              updatedAt: new Date().toISOString()
+            },
+            $setOnInsert: {
+              createdAt: item.createdAt || new Date().toISOString()
+            }
           },
-          $setOnInsert: {
-            createdAt: item.createdAt || new Date().toISOString()
-          }
-        },
-        upsert: true
-      }
-    }));
+          upsert: true
+        }
+      };
+    });
 
     const result = await workLogsCollection.bulkWrite(operations);
     const totalAffected = (result.upsertedCount || 0) + (result.modifiedCount || 0);
