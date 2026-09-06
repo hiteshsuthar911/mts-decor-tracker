@@ -24,8 +24,8 @@ A clean, responsive, light-theme mobile web application built with **Bootstrap 5
 
 ### 3. Screen 3: Cascading Work Details Entry (Step 2 of 2)
 - Location & flat context pill with one-click "Change" action.
-- **Parent Work Category Dropdown** (11 options):
-  `Spotted Marble Sill`, `Stone Sill Work`, `Kitchen`, `Toilet`, `Main Floor`, `Utility Area`, `Deck Area`, `Common Lobby`, `Staircase`, `Terrace`, `Other`.
+- **Parent Work Category Dropdown** (15 options):
+  `Spotted Marble Sill`, `Stone Sill Work`, `Kitchen`, `Toilet`, `Main Floor`, `Utility Area`, `Deck Area`, `Common Lobby`, `Staircase`, `Ground Lobby`, `Gazibo`, `Podium`, `Compound Area`, `Terrace`, `Other`.
 - **Dynamic Child Sub-Work Dropdown**: Populates strictly based on the parent category. Selecting "Other" dynamically hides the child dropdown and reveals the notes textarea.
 - **Inline Measurement & Units Flex Row**:
   - Quantity numeric input.

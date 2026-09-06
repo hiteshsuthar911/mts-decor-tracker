@@ -15,6 +15,7 @@ const WORK_LOGIC_MATRIX = {
     "Living Room",
     "Toilet",
     "Kitchen",
+    "Cutting Work",
     "Utility",
     "Staircase",
     "Other"
@@ -31,8 +32,8 @@ const WORK_LOGIC_MATRIX = {
     "Floor Tiles",
     "Wall Tiles",
     "Stone Sill",
-    "Floor Italian",
-    "Dedo Italian",
+    "floor Italian",
+    "dedo Italian",
     "Counter",
     "Other"
   ],
@@ -66,17 +67,17 @@ const WORK_LOGIC_MATRIX = {
     "Treads & Risers",
     "Skirting",
     "Stone Sill",
-    "Landing Tiles",
+    "Lending Tiles",
     "Other"
   ],
-  "Group Lobby": [
+  "Ground Lobby": [
     "Floor Tiles",
     "Koba",
     "Floor Italian",
     "Dedo Italian",
     "Inlay Work",
     "Windowsill",
-    "Spotted Marble Sill",
+    "Spotted marable Sill",
     "Counter",
     "Other"
   ],
@@ -94,7 +95,7 @@ const WORK_LOGIC_MATRIX = {
     "Other"
   ],
   "Compound Area": [
-    "Appoxie / Epoxy Filling",
+    "Appoxie Filling",
     "Floor Tiles",
     "Floor Koba",
     "Compound Wall Tiles",
@@ -168,5 +169,3 @@ if (typeof window !== "undefined") {
   window.SECURITY_PINS = SECURITY_PINS;
   window.STORAGE_KEY = STORAGE_KEY;
 }
-
-
